@@ -4,8 +4,15 @@ import XCTest
 final class DoubleNodRecognizerTests: XCTestCase {
     typealias S = TraceSynth
 
+    /// Double nod is off by default; these tests turn it on unless stated otherwise.
+    private static var enabled: HeadsUpSettings {
+        var settings = HeadsUpSettings.defaults
+        settings.doubleNodEnabled = true
+        return settings
+    }
+
     /// Runs the trace and returns (gesture, time of confirmation) pairs.
-    private func confirmations(_ trace: [HeadPose], settings: HeadsUpSettings = .defaults) -> [(HeadGesture, Double)] {
+    private func confirmations(_ trace: [HeadPose], settings: HeadsUpSettings = enabled) -> [(HeadGesture, Double)] {
         var recognizer = DoubleNodRecognizer(settings: settings)
         var result: [(HeadGesture, Double)] = []
         for pose in trace {
@@ -40,8 +47,8 @@ final class DoubleNodRecognizerTests: XCTestCase {
     }
 
     func testDisabledDoubleNodClicksImmediately() {
-        var settings = HeadsUpSettings.defaults
-        settings.doubleNodEnabled = false
+        let settings = HeadsUpSettings.defaults
+        XCTAssertFalse(settings.doubleNodEnabled, "off by default: single nods click immediately")
         let trace = S.trace(duration: 3, pitch: [S.nod(at: 0.5)])
         var inner = NodShakeRecognizer(config: NodShakeConfig(settings: .defaults))
         let innerConfirm = trace.first { inner.process($0).confirmedGestures == [.nod] }?.timestamp

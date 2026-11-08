@@ -24,6 +24,8 @@ public enum CalibrationAxis: String, Sendable, Equatable {
 public enum CalibrationError: Error, Sendable, Equatable {
     case missingCapture(CalibrationStep)
     case rangeTooSmall(CalibrationAxis, degrees: Double)
+    /// The final center check differed from the first center capture.
+    case centerDrifted(degrees: Double)
 
     public var userMessage: String {
         switch self {
@@ -33,6 +35,10 @@ public enum CalibrationError: Error, Sendable, Equatable {
             let measured = String(format: "%.0f", degrees)
             return "Your head moved only \(measured) degrees toward the \(axis.rawValue). "
                 + "Turn a little further toward each corner. Let's try again."
+        case let .centerDrifted(degrees):
+            let measured = String(format: "%.0f", degrees)
+            return "Your center position moved \(measured) degrees during calibration. "
+                + "Keep your body still. Let's try again."
         }
     }
 }
@@ -70,7 +76,7 @@ public struct Calibration: Sendable, Equatable, Codable {
         targetInset: Double,
         minRangeDegrees: Double
     ) throws -> Calibration {
-        for step in CalibrationStep.allCases where captures[step] == nil {
+        for step in CalibrationStep.fitSteps where captures[step] == nil {
             throw CalibrationError.missingCapture(step)
         }
         let neutral = captures[.center]!

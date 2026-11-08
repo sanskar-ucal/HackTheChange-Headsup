@@ -77,48 +77,64 @@ final class PointerMapperTests: XCTestCase {
         XCTAssertEqual(x(&m, yaw: 15, t: 0.04), 0.625, accuracy: 1e-9)
     }
 
-    func testPrecisionDampingAppliedBelowThreshold() {
-        // 5 °/s is well below the 15 °/s precision speed: only half the travel.
-        var m = mapper(.init(precisionSpeedDegPerSec: 15, precisionGain: 0.5))
-        var last = 0.0
-        for i in 0...50 { last = x(&m, yaw: 5 * Double(i) * 0.04, t: Double(i) * 0.04) }  // 0 → 10°
-        XCTAssertEqual(last, 0.5 + 0.5 * 5 / 30, accuracy: 0.01)
+    private func pure(yaw: Double, pitch: Double = 0, sensitivity: Double = 1) -> NormalizedPoint {
+        PointerMapper.map(yaw: r(yaw), pitch: r(pitch), calibration: calibration(), sensitivity: sensitivity).point
     }
 
-    func testDeliberateMovementGetsFullTravel() {
-        var m = mapper(.init(precisionSpeedDegPerSec: 15, precisionGain: 0.5))
-        var last = 0.0
-        for i in 0...25 {
-            let t = Double(i) * 0.04
-            last = x(&m, yaw: min(60 * t, 20), t: t)  // 60 °/s to 20°, then hold
-        }
-        XCTAssertEqual(last, 0.5 + 0.5 * 20 / 30, accuracy: 0.01)
+    /// Pixel distance in a 1000 × 800 pointing rect.
+    private func pixels(_ a: NormalizedPoint, _ b: NormalizedPoint) -> Double {
+        hypot((a.x - b.x) * 1000, (a.y - b.y) * 800)
     }
 
-    func testHysteresisPreventsCreepFromSmallNoise() {
-        var m = mapper(.init(deadZoneDegrees: 0.6, deadZoneStartDegrees: 1.0, settleTime: 0.25))
-        _ = x(&m, yaw: 0, t: 0)
-        for i in 1...12 { XCTAssertEqual(x(&m, yaw: 0, t: Double(i) * 0.04), 0.5) }  // settle
-        for i in 13...100 {
-            let noise = 0.7 * sin(Double(i) * 1.7)  // ±0.7°: more than the moving dead zone
-            XCTAssertEqual(x(&m, yaw: noise, t: Double(i) * 0.04), 0.5, "sample \(i)")
+    func testMovingAwayAndReturningLandsOnTheSamePoint() {
+        var m = mapper(.init(sensitivity: 0.6, deadZoneDegrees: 0.6, settleTime: 0.25))
+        var t = 0.0
+        func step(_ yaw: Double, _ pitch: Double) -> NormalizedPoint {
+            defer { t += 0.04 }
+            return m.map(pose(yaw: yaw, pitch: pitch, t: t)).point
+        }
+        var original = NormalizedPoint.center
+        for _ in 0..<15 { original = step(5, 3) }               // settle at A
+        for i in 1...12 { _ = step(5 - Double(i) * 1.25, 3 - Double(i) * 0.75) }  // to B
+        for _ in 0..<8 { _ = step(-10, -6) }
+        for i in 1...12 { _ = step(-10 + Double(i) * 1.25, -6 + Double(i) * 0.75) } // back to A
+        var returned = NormalizedPoint.center
+        for _ in 0..<15 { returned = step(5, 3) }
+        XCTAssertLessThan(pixels(original, returned), 2)
+        XCTAssertLessThan(pixels(returned, pure(yaw: 5, pitch: 3, sensitivity: 0.6)), 2, "the pure mapping")
+    }
+
+    func testPointingIsExactWhileMoving() {
+        var m = mapper(.init(deadZoneDegrees: 0.6, settleTime: 0.25))
+        for i in 0...40 {
+            let yaw = Double(i) * 0.5  // 12.5 °/s
+            let point = m.map(pose(yaw: yaw, t: Double(i) * 0.04)).point
+            if i > 1 { XCTAssertEqual(point.x, pure(yaw: yaw).x, accuracy: 1e-9, "no trailing offset at \(yaw)°") }
         }
     }
 
-    func testDeadZoneTracksDeliberateMovementContinuously() {
-        var m = mapper(.init(deadZoneDegrees: 0.6, deadZoneStartDegrees: 1.0, settleTime: 0.25))
-        _ = x(&m, yaw: 0, t: 0)
-        var previous = 0.5
-        var values: [Double] = []
-        for step in 1...20 {
-            let value = x(&m, yaw: Double(step) * 0.5, t: Double(step) * 0.04)
-            XCTAssertGreaterThanOrEqual(value, previous)
-            previous = value
-            values.append(value)
+    func testDeadZoneOnlyHoldsStill() {
+        var m = mapper(.init(deadZoneDegrees: 0.6, settleTime: 0.25))
+        for i in 0..<25 { _ = x(&m, yaw: 4, t: Double(i) * 0.04) }  // settled (and refreshed) at 4°
+        let held = pure(yaw: 4).x
+        for i in 25..<80 {
+            let tremor = 4 + 0.5 * sin(Double(i) * 1.7)  // under the 0.6° dead zone
+            XCTAssertEqual(x(&m, yaw: tremor, t: Double(i) * 0.04), held, accuracy: 1e-9, "sample \(i)")
         }
-        XCTAssertEqual(values.first, 0.5, "the first 0.5° step is inside the 1° start threshold")
-        // While moving the output trails by the 0.6° moving dead zone.
-        XCTAssertEqual(previous, 0.5 + 0.5 * (10 - 0.6) / 30, accuracy: 1e-9)
+        // A deliberate move goes exactly to the new pose: the dead zone never shifts the mapping.
+        XCTAssertEqual(x(&m, yaw: 6, t: 3.3), pure(yaw: 6).x, accuracy: 1e-9)
+    }
+
+    func testSamePoseGivesSamePointRegardlessOfHistory() {
+        var fromLeft = mapper(.init(deadZoneDegrees: 0.6))
+        var fromRight = mapper(.init(deadZoneDegrees: 0.6))
+        for i in 0...20 { _ = x(&fromLeft, yaw: -15 + Double(i), t: Double(i) * 0.04) }   // arrive at 5°
+        for i in 0...20 { _ = x(&fromRight, yaw: 25 - Double(i), t: Double(i) * 0.04) }   // arrive at 5°
+        for i in 21...40 {
+            _ = x(&fromLeft, yaw: 5, t: Double(i) * 0.04)
+            _ = x(&fromRight, yaw: 5, t: Double(i) * 0.04)
+        }
+        XCTAssertEqual(x(&fromLeft, yaw: 5, t: 1.68), x(&fromRight, yaw: 5, t: 1.68), accuracy: 1e-9)
     }
 
     func testYawWrapAroundAtPi() {

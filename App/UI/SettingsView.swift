@@ -50,9 +50,7 @@ struct MovementSettingsSection: View {
         SliderRow(title: "Smoothing", help: "Higher is steadier but slightly slower to follow.",
                   value: smoothing, range: 0...1, step: 0.05, format: "%.0f%%", scale: 100,
                   minLabel: "Snappy", maxLabel: "Smooth")
-        SliderRow(title: "Precision slow-down", help: "Slow head movement moves the pointer this much (100% = off).",
-                  value: $settings.precisionGain, range: 0.2...1, step: 0.05, format: "%.0f%%", scale: 100)
-        SliderRow(title: "Dead zone", help: "Head movement smaller than this is ignored while moving.",
+        SliderRow(title: "Dead zone", help: "Once still, head movement smaller than this doesn't move the pointer.",
                   value: $settings.deadZoneDegrees, range: 0...2, step: 0.1, format: "%.1f°")
         BigToggle(title: "Snap to buttons & links", help: "The pointer clings to nearby clickable things.",
                   isOn: $settings.snapEnabled)

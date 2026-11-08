@@ -22,11 +22,11 @@ final class AppCoordinatorTests: XCTestCase {
         XCTAssertEqual(h.coordinator.state, .calibrating(.center))
         XCTAssertTrue(h.keepAlive.isRunning)
 
-        for (yaw, pitch) in [(0.0, 0.0), (-18, 13.5), (18, 13.5), (18, -13.5), (-18, -13.5)] {
+        for (yaw, pitch) in [(0.0, 0.0), (-18, 13.5), (18, 13.5), (18, -13.5), (-18, -13.5), (0, 0)] {
             h.holdStill(3, yaw: yaw, pitch: pitch)
         }
         XCTAssertEqual(h.coordinator.state, .tracking)
-        XCTAssertEqual(h.feedback.cues.filter { $0 == .calibrationStep }.count, 4)
+        XCTAssertEqual(h.feedback.cues.filter { $0 == .calibrationStep }.count, 5, "center + 4 corners; the center check then finishes")
         XCTAssertTrue(h.feedback.cues.contains(.calibrationDone))
         XCTAssertEqual(AngleMath.degrees(h.store.calibration?.rangeRight ?? 0), 20, accuracy: 1)
         XCTAssertEqual(AngleMath.degrees(h.store.calibration?.rangeDown ?? 0), 15, accuracy: 1)
@@ -39,7 +39,7 @@ final class AppCoordinatorTests: XCTestCase {
         let h = CoordinatorHarness(settings: settings)
         h.coordinator.refreshPermissions()
         h.coordinator.handleConnection(.connected)
-        for (yaw, pitch) in [(0.0, 0.0), (-18, 13.5), (18, 13.5), (18, -13.5), (-18, -13.5)] {
+        for (yaw, pitch) in [(0.0, 0.0), (-18, 13.5), (18, 13.5), (18, -13.5), (-18, -13.5), (0, 0)] {
             h.holdStill(3, yaw: yaw, pitch: pitch)
         }
         XCTAssertEqual(h.coordinator.state, .practicing)
@@ -53,7 +53,7 @@ final class AppCoordinatorTests: XCTestCase {
         let h = CoordinatorHarness(settings: settings)
         h.coordinator.refreshPermissions()
         h.coordinator.handleConnection(.connected)
-        for (yaw, pitch) in [(0.0, 0.0), (-18, 13.5), (18, 13.5), (18, -13.5), (-18, -13.5)] {
+        for (yaw, pitch) in [(0.0, 0.0), (-18, 13.5), (18, 13.5), (18, -13.5), (-18, -13.5), (0, 0)] {
             h.holdStill(3, yaw: yaw, pitch: pitch)
         }
         h.holdStill(1.2, yaw: -18, pitch: -13.5)  // practice times out without reaching a target
@@ -69,7 +69,7 @@ final class AppCoordinatorTests: XCTestCase {
         let h = CoordinatorHarness()
         h.coordinator.refreshPermissions()
         h.coordinator.handleConnection(.connected)
-        for (yaw, pitch) in [(0.0, 0.0), (-3, 13.5), (18, 13.5), (18, -13.5), (-3, -13.5)] {
+        for (yaw, pitch) in [(0.0, 0.0), (-3, 13.5), (18, 13.5), (18, -13.5), (-3, -13.5), (0, 0)] {
             h.holdStill(3, yaw: yaw, pitch: pitch)
         }
         XCTAssertEqual(h.coordinator.state, .calibrating(.center))

@@ -51,8 +51,11 @@ public final class AppCoordinator: ObservableObject {
     var pointerTarget: CGPoint?
     var lastPostedPoint: CGPoint?
     var lastFrameTime: TimeInterval?
-    var pendingAction: PendingAction?
-    var glideCounter = 0
+    /// True from a gesture onset until it is confirmed or rejected: nothing moves the pointer.
+    var pointerFrozen = false
+    /// Positions actually posted, stamped with the latest sensor time (for gesture rollback).
+    var postedHistory = CursorHistory(duration: 1.0)
+    var lastPoseTime: TimeInterval = 0
     var glideOnNextTarget = false
     var pressingUntil: TimeInterval?
     var isSnapped = false
@@ -77,13 +80,6 @@ public final class AppCoordinator: ObservableObject {
     private var permissionTimer: Timer?
     private var diagnosticsTimer: Timer?
     private var isStarted = false
-
-    /// An action that runs when the rollback glide reaches its point.
-    struct PendingAction {
-        var token: Int
-        var gesture: HeadGesture
-        var point: CGPoint
-    }
 
     public init(dependencies: Dependencies, settings: HeadsUpSettings, recorder: MotionRecorder? = nil) {
         let savedCalibration = dependencies.calibrationStore.load()

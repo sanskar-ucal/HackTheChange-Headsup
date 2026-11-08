@@ -103,7 +103,7 @@ struct AdvancedSettingsSection: View {
         SliderRow(title: "Filter beta", help: "How much fast movement reduces smoothing lag.",
                   value: $settings.filterBeta, range: 0...0.05, step: 0.001, format: "%.3f")
         SliderRow(title: "Pointer spring", help: "Higher follows the head faster between sensor updates.",
-                  value: $settings.pointerSpringStiffness, range: 1000...12000, step: 250, format: "%.0f")
+                  value: $settings.pointerSpringStiffness, range: 1000...20000, step: 500, format: "%.0f")
         BigToggle(title: "Invert yaw (left/right)", help: "Use if the pointer moves the wrong way sideways.",
                   isOn: $settings.invertYaw)
         BigToggle(title: "Invert pitch (up/down)", help: "Use if the pointer moves the wrong way vertically.",

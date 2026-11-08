@@ -32,14 +32,12 @@ final class CoordinatorHarness {
         rangeLeft: AngleMath.radians(20), rangeRight: AngleMath.radians(20),
         rangeUp: AngleMath.radians(15), rangeDown: AngleMath.radians(15))
 
-    /// Settings for coordinator tests: sensitivity 1 and no precision damping so pointer
-    /// positions are easy to predict (those features have their own unit tests).
+    /// Settings for coordinator tests: sensitivity 1 so pointer positions are easy to predict.
     nonisolated static var testSettings: HeadsUpSettings {
         var settings = HeadsUpSettings.defaults
         settings.permissionPollInterval = 0
         settings.practiceEnabled = false
         settings.sensitivity = 1
-        settings.precisionGain = 1
         return settings
     }
 
@@ -83,6 +81,19 @@ final class CoordinatorHarness {
             coordinator.renderFrame(at: pose.timestamp)
         }
         clock += duration
+    }
+
+    /// Feeds explicit poses (timestamps relative to 0), calling `each` after every pose and frame.
+    func feed(poses: [HeadPose], each: (HeadPose) -> Void = { _ in }) {
+        guard let last = poses.last else { return }
+        for var pose in poses {
+            pose.timestamp += clock
+            now.value = pose.timestamp
+            coordinator.handle(pose: pose)
+            coordinator.renderFrame(at: pose.timestamp)
+            each(pose)
+        }
+        clock += last.timestamp + 0.04
     }
 
     func holdStill(_ duration: Double, yaw: Double = 0, pitch: Double = 0) {

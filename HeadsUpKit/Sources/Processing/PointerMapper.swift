@@ -31,74 +31,62 @@ public struct MappedPointer: Sendable, Equatable {
     /// Clamped to the screen.
     public var point: NormalizedPoint
     public var overshoot: EdgeOvershoot
-    /// Smoothed head angular speed, degrees per second.
-    public var headSpeed: Double
 }
 
 /// Maps a (filtered) head pose to a normalized screen position.
 ///
-/// Stages: angle relative to neutral → hysteretic dead zone → precision damping →
-/// linear mapping with `sensitivity` against the calibrated per-side ranges. Roll is ignored.
+/// Pointing is a pure function of pose: angle relative to neutral → linear mapping with
+/// `sensitivity` against the calibrated per-side ranges. The same pose always gives the
+/// same point. The only state is a hold-only dead zone (`StillnessHold`), which may keep
+/// the pointer still on a recent pose but never offsets the mapping. Roll is ignored.
 public struct PointerMapper: Sendable {
     public struct Config: Sendable, Equatable {
+        /// Pure scale on the mapping: 1 maps the calibrated corners to the screen corners.
         public var sensitivity: Double
         public var deadZoneDegrees: Double
-        public var deadZoneStartDegrees: Double
         public var settleTime: TimeInterval
-        public var precisionSpeedDegPerSec: Double
-        public var precisionGain: Double
-        public var precisionRecoveryPerSec: Double
 
-        public init(sensitivity: Double = 1, deadZoneDegrees: Double = 0, deadZoneStartDegrees: Double = 0,
-                    settleTime: TimeInterval = 0.25, precisionSpeedDegPerSec: Double = 15,
-                    precisionGain: Double = 1, precisionRecoveryPerSec: Double = 3) {
+        public init(sensitivity: Double = 1, deadZoneDegrees: Double = 0, settleTime: TimeInterval = 0.25) {
             self.sensitivity = sensitivity
             self.deadZoneDegrees = deadZoneDegrees
-            self.deadZoneStartDegrees = deadZoneStartDegrees
             self.settleTime = settleTime
-            self.precisionSpeedDegPerSec = precisionSpeedDegPerSec
-            self.precisionGain = precisionGain
-            self.precisionRecoveryPerSec = precisionRecoveryPerSec
         }
 
         public init(settings: HeadsUpSettings) {
             self.init(sensitivity: settings.sensitivity, deadZoneDegrees: settings.deadZoneDegrees,
-                      deadZoneStartDegrees: settings.deadZoneStartDegrees, settleTime: settings.deadZoneSettleTime,
-                      precisionSpeedDegPerSec: settings.precisionSpeedDegPerSec, precisionGain: settings.precisionGain,
-                      precisionRecoveryPerSec: settings.precisionRecoveryPerSec)
+                      settleTime: settings.deadZoneSettleTime)
         }
     }
 
     public var calibration: Calibration
     /// Changing the config (e.g. sensitivity) takes effect immediately; no recalibration.
     public var config: Config {
-        didSet { configureStages() }
+        didSet { configureHold() }
     }
 
-    private var deadband: HysteresisDeadband
-    private var damper: PrecisionDamper
+    private var hold: StillnessHold
 
     public init(calibration: Calibration, config: Config) {
         self.calibration = calibration
         self.config = config
-        deadband = HysteresisDeadband(movingWidth: 0, startWidth: 0, settleTime: 0)
-        damper = PrecisionDamper(precisionSpeed: 0, gain: 1, recoveryRate: 0)
-        configureStages()
+        hold = StillnessHold(width: AngleMath.radians(config.deadZoneDegrees), settleTime: config.settleTime)
     }
 
-    /// Forget dead-zone and damping state, e.g. after recentering.
+    /// Forget the dead-zone hold, e.g. after recentering.
     public mutating func reset() {
-        deadband.reset()
-        damper.reset()
+        hold.reset()
     }
 
     public mutating func map(_ pose: HeadPose) -> MappedPointer {
         let relYaw = AngleMath.wrap(pose.yaw - calibration.neutralYaw)
         let relPitch = pose.pitch - calibration.neutralPitch
-        let held = deadband.apply(x: relYaw, y: relPitch, time: pose.timestamp)
-        let (yaw, pitch) = damper.apply(x: held.x, y: held.y, time: pose.timestamp)
+        let (yaw, pitch) = hold.apply(x: relYaw, y: relPitch, time: pose.timestamp)
+        return Self.map(yaw: yaw, pitch: pitch, calibration: calibration, sensitivity: config.sensitivity)
+    }
 
-        let gain = max(config.sensitivity, 0.05)
+    /// The pure mapping from angles relative to neutral (radians).
+    public static func map(yaw: Double, pitch: Double, calibration: Calibration, sensitivity: Double) -> MappedPointer {
+        let gain = max(sensitivity, 0.05)
         let xRange = max(yaw >= 0 ? calibration.rangeRight : calibration.rangeLeft, 1e-6)
         let yRange = max(pitch >= 0 ? calibration.rangeUp : calibration.rangeDown, 1e-6)
         let x = 0.5 + 0.5 * yaw * gain / xRange
@@ -111,18 +99,11 @@ public struct PointerMapper: Sendable {
             down: beyond(-pitch, calibration.rangeDown / gain),
             left: beyond(-yaw, calibration.rangeLeft / gain),
             right: beyond(yaw, calibration.rangeRight / gain))
-        return MappedPointer(
-            point: NormalizedPoint(x: min(max(x, 0), 1), y: min(max(y, 0), 1)),
-            overshoot: overshoot,
-            headSpeed: AngleMath.degrees(damper.speed))
+        return MappedPointer(point: NormalizedPoint(x: min(max(x, 0), 1), y: min(max(y, 0), 1)), overshoot: overshoot)
     }
 
-    private mutating func configureStages() {
-        deadband.movingWidth = AngleMath.radians(config.deadZoneDegrees)
-        deadband.startWidth = AngleMath.radians(config.deadZoneStartDegrees)
-        deadband.settleTime = config.settleTime
-        damper.precisionSpeed = AngleMath.radians(config.precisionSpeedDegPerSec)
-        damper.gain = min(max(config.precisionGain, 0.05), 1)
-        damper.recoveryRate = config.precisionRecoveryPerSec
+    private mutating func configureHold() {
+        hold.width = AngleMath.radians(config.deadZoneDegrees)
+        hold.settleTime = config.settleTime
     }
 }

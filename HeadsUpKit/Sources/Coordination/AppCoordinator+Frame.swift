@@ -12,7 +12,8 @@ extension AppCoordinator {
         let dt = lastFrameTime.map { timestamp - $0 } ?? 1.0 / 60.0
         lastFrameTime = timestamp
 
-        if state.allowsPointerMotion, let target = pointerTarget {
+        // During a gesture candidate nothing moves the pointer (see `freezePointer`).
+        if state.allowsPointerMotion, !pointerFrozen, let target = pointerTarget {
             let step = animator.step(toward: target, now: timestamp, dt: dt)
             let point = engine?.geometry.clamp(step.position) ?? step.position
             if let last = lastPostedPoint, hypot(point.x - last.x, point.y - last.y) < CGFloat(settings.minMoveDistance) {
@@ -20,9 +21,9 @@ extension AppCoordinator {
             } else {
                 postMotion { deps.cursor.move(to: point) }
                 lastPostedPoint = point
+                postedHistory.append(point, at: lastPoseTime)
                 reportLatency(at: timestamp)
             }
-            if let token = step.finishedGlide { completeGlide(token, at: timestamp) }
         }
 
         if !scrollVelocity.isZero, state == .tracking || state == .scrollMode {
@@ -45,14 +46,6 @@ extension AppCoordinator {
         let now = deps.clock()
         if let last = lastFrameTime, now - last < 0.1 { return }
         renderFrame(at: now)
-    }
-
-    private func completeGlide(_ token: Int, at timestamp: TimeInterval) {
-        guard let action = pendingAction, action.token == token else { return }
-        pendingAction = nil
-        postAction { dispatcher.dispatch(action.gesture, at: action.point) }
-        pressingUntil = timestamp + 0.2
-        if dispatcher.action(for: action.gesture) == .click { didPerformClick() }
     }
 
     /// Sample-to-cursor latency: time from the sensor sample that set the target to the

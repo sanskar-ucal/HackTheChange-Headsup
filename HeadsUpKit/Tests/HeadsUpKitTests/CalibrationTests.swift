@@ -65,26 +65,72 @@ final class CalibrationTests: XCTestCase {
         XCTAssertEqual(recentered.rangeDown, calibration.rangeDown)
     }
 
-    func testSessionCapturesAllTargetsByDwell() {
+    /// The six calibration targets (center, four corners, center check) in degrees.
+    private let targets: [(Double, Double)] = [(0, 0), (-18, 13.5), (18, 13.5), (18, -13.5), (-18, -13.5), (0, 0)]
+
+    /// Feeds each target as a block of raw poses and collects the session's updates.
+    private func run(_ blocks: [[HeadPose]]) -> [CalibrationSession.Update] {
         var session = CalibrationSession(settings: .defaults)
-        let targets: [(Double, Double)] = [(0, 0), (-18, 13.5), (18, 13.5), (18, -13.5), (-18, -13.5)]
-        var captured: [CalibrationStep] = []
-        var result: Calibration?
-        var t = 0.0
-        for (yaw, pitch) in targets {
-            for _ in 0..<50 {  // 2 s per target at 25 Hz
-                let pose = HeadPose(timestamp: t, yaw: r(yaw), pitch: r(pitch), roll: 0)
-                t += 0.04
-                switch session.process(pose) {
-                case let .captured(step, _): captured.append(step)
-                case let .finished(calibration): result = calibration
-                case .failed(let error): XCTFail("calibration failed: \(error)")
-                case .progress: break
-                }
+        var updates: [CalibrationSession.Update] = []
+        var offset = 0.0
+        for block in blocks {
+            for var pose in block {
+                pose.timestamp += offset
+                let update = session.process(pose)
+                if case .progress = update { continue }
+                updates.append(update)
             }
+            offset += (block.last?.timestamp ?? 0) + 0.04
         }
-        XCTAssertEqual(captured, [.center, .topLeft, .topRight, .bottomRight])
-        XCTAssertEqual(AngleMath.degrees(result?.rangeRight ?? 0), 20, accuracy: 1e-6)
+        return updates
+    }
+
+    private func still(yaw: Double, pitch: Double, duration: Double = 2.5) -> [HeadPose] {
+        TraceSynth.trace(duration: duration,
+                         yaw: [TraceSynth.constant(yaw), TraceSynth.noise(yaw + 1)],
+                         pitch: [TraceSynth.constant(pitch), TraceSynth.noise(pitch + 2)])
+    }
+
+    func testSessionCapturesAllTargetsByDwell() {
+        let updates = run(targets.map { still(yaw: $0.0, pitch: $0.1) })
+        let captured = updates.compactMap { update -> CalibrationStep? in
+            if case let .captured(step, _) = update { return step } else { return nil }
+        }
+        XCTAssertEqual(captured, [.center, .topLeft, .topRight, .bottomRight, .bottomLeft])
+        guard case let .finished(result)? = updates.last else { return XCTFail("not finished: \(updates)") }
+        // Noisy fixture traces (±0.05°, ±2 °/s): medians give the expected ranges.
+        XCTAssertEqual(AngleMath.degrees(result.rangeLeft), 20, accuracy: 0.2)
+        XCTAssertEqual(AngleMath.degrees(result.rangeRight), 20, accuracy: 0.2)
+        XCTAssertEqual(AngleMath.degrees(result.rangeUp), 15, accuracy: 0.2)
+        XCTAssertEqual(AngleMath.degrees(result.rangeDown), 15, accuracy: 0.2)
+    }
+
+    func testMovingCaptureIsRejected() {
+        // ±1° wobble at 2 Hz stays inside the 2° dwell tolerance but turns at ~12.6 °/s.
+        let wobble = TraceSynth.Component(value: { sin(4 * .pi * $0) }, rate: { 4 * .pi * cos(4 * .pi * $0) })
+        let updates = run([TraceSynth.trace(duration: 5, yaw: [wobble])])
+        XCTAssertTrue(updates.contains(.rejected(.center)))
+        XCTAssertFalse(updates.contains { if case .captured = $0 { return true } else { return false } })
+    }
+
+    func testCaptureIsTheMedianOfTheWindow() {
+        var poses = (0..<19).map { HeadPose(timestamp: Double($0) * 0.04, yaw: 0, pitch: AngleMath.radians(2), roll: 0) }
+        poses[3].yaw = AngleMath.radians(1.5)  // outliers barely move a median
+        poses[9].yaw = AngleMath.radians(1.8)
+        let median = CalibrationSession.median(of: poses)
+        XCTAssertEqual(median.yaw, 0, accuracy: 1e-12)
+        XCTAssertEqual(AngleMath.degrees(median.pitch), 2, accuracy: 1e-9)
+
+        let seam = [179.0, -179.0, 179.5].map { HeadPose(timestamp: 0, yaw: AngleMath.radians($0), pitch: 0, roll: 0) }
+        XCTAssertEqual(AngleMath.degrees(CalibrationSession.median(of: seam).yaw), 179.5, accuracy: 1e-9)
+    }
+
+    func testCenterDriftRedoesCalibration() {
+        var blocks = targets.map { still(yaw: $0.0, pitch: $0.1) }
+        blocks[5] = still(yaw: 4, pitch: 0)  // the head drifted 4° by the final center check
+        guard case let .failed(error)? = run(blocks).last,
+              case let .centerDrifted(degrees) = error else { return XCTFail("expected a drift failure") }
+        XCTAssertEqual(degrees, 4, accuracy: 0.1)
     }
 
     func testSessionDoesNotCaptureNextTargetWithoutMoving() {

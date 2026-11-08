@@ -11,7 +11,8 @@ public struct PointerAnimator: Sendable {
         public var finishedGlide: Int?
     }
 
-    /// ω² of the spring. Critically damped settle (2 %) takes ≈ 5.8 / √stiffness seconds.
+    /// ω² of the spring. Critically damped settle (2 %) takes ≈ 5.8 / √stiffness seconds
+    /// (≈ 49 ms at the default 14000).
     public var stiffness: Double
     public private(set) var position: CGPoint?
     private var velocityX = 0.0
@@ -45,6 +46,12 @@ public struct PointerAnimator: Sendable {
         glide = Glide(from: nil, to: point, duration: max(duration, 0), start: nil, token: token)
     }
 
+    /// 0 at u ≤ 0, 1 at u ≥ 1, eased in between.
+    static func smoothstep(_ u: Double) -> Double {
+        let t = min(max(u, 0), 1)
+        return t * t * (3 - 2 * t)
+    }
+
     public mutating func step(toward target: CGPoint, now: TimeInterval, dt rawDt: Double) -> Step {
         guard let current = position else {
             position = glide?.to ?? target
@@ -64,7 +71,7 @@ public struct PointerAnimator: Sendable {
                 return Step(position: active.to, finishedGlide: active.token)
             }
             glide = active
-            let e = PrecisionDamper.smoothstep(fraction)
+            let e = Self.smoothstep(fraction)
             let point = CGPoint(x: from.x + (active.to.x - from.x) * e, y: from.y + (active.to.y - from.y) * e)
             position = point
             return Step(position: point, finishedGlide: nil)

@@ -13,6 +13,13 @@ public final class LiveTelemetry: ObservableObject {
     @Published public internal(set) var isAppActive = true
     /// Sensor sample → posted cursor move, milliseconds (target: under 30 ms).
     @Published public internal(set) var pointerLatencyMs: Double?
+    /// Recent nod/shake candidates: confirmed or rejected, with the reason (newest last).
+    @Published public internal(set) var gestureLog: [String] = []
+
+    func appendGestureLog(_ line: String) {
+        gestureLog.append(line)
+        if gestureLog.count > 12 { gestureLog.removeFirst(gestureLog.count - 12) }
+    }
 
     public init() {}
 }

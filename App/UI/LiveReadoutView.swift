@@ -34,6 +34,14 @@ struct LiveReadoutView: View {
             Text(backgroundText)
                 .font(.caption)
                 .foregroundStyle(backgroundOK ? Color.secondary : Color.orange)
+            if !telemetry.gestureLog.isEmpty {
+                Text("Gesture log (newest last)").font(.caption.weight(.semibold))
+                ForEach(Array(telemetry.gestureLog.enumerated()), id: \.offset) { _, line in
+                    Text(line)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(line.contains("confirmed") ? Color.primary : Color.orange)
+                }
+            }
         }
     }
 

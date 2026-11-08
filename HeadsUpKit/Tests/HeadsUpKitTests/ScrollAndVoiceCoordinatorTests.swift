@@ -29,7 +29,9 @@ final class ScrollingCoordinatorTests: XCTestCase {
     }
 
     func testDoubleNodTogglesScrollModeAndShakeExits() {
-        let h = CoordinatorHarness.tracking()
+        var settings = CoordinatorHarness.testSettings
+        settings.doubleNodEnabled = true
+        let h = CoordinatorHarness.tracking(settings: settings)
         h.feed(2.4, pitch: [S.nod(at: 0.3), S.nod(at: 0.9)])
         XCTAssertEqual(h.coordinator.state, .scrollMode)
         XCTAssertTrue(h.feedback.cues.contains(.scrollOn))

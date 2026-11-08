@@ -81,7 +81,7 @@ extension AppCoordinator {
 
     func enter(_ newState: AppState) {
         holdProgress = nil
-        pendingAction = nil
+        pointerFrozen = false
         scrollVelocity = .zero
         if newState != .listening && newState != .voiceReview { transcript = "" }
         state = newState

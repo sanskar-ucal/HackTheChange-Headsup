@@ -7,6 +7,11 @@ public enum CalibrationStep: Int, Sendable, Equatable, Hashable, Codable, CaseIt
     case topRight
     case bottomRight
     case bottomLeft
+    /// The center again at the end: if the head pose drifted, calibration is redone.
+    case centerCheck
+
+    /// The steps whose captures define the mapping (all but the final center check).
+    public static let fitSteps: [CalibrationStep] = [.center, .topLeft, .topRight, .bottomRight, .bottomLeft]
 
     public var next: CalibrationStep? {
         CalibrationStep(rawValue: rawValue + 1)
@@ -21,14 +26,15 @@ public enum CalibrationStep: Int, Sendable, Equatable, Hashable, Codable, CaseIt
         case .topLeft: return "Now look at the top left corner."
         case .topRight: return "Now the top right corner."
         case .bottomRight: return "Now the bottom right corner."
-        case .bottomLeft: return "Finally, the bottom left corner."
+        case .bottomLeft: return "Now the bottom left corner."
+        case .centerCheck: return "Finally, look back at the center dot."
         }
     }
 
     /// Where the target dot is drawn, normalized 0…1 with a top-left origin.
     public func target(inset: Double) -> (x: Double, y: Double) {
         switch self {
-        case .center: return (0.5, 0.5)
+        case .center, .centerCheck: return (0.5, 0.5)
         case .topLeft: return (inset, inset)
         case .topRight: return (1 - inset, inset)
         case .bottomRight: return (1 - inset, 1 - inset)

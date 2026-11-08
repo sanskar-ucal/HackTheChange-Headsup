@@ -23,8 +23,12 @@ extension AppCoordinator {
         switch update {
         case let .progress(progress):
             calibrationProgress = progress
+        case .rejected:
+            calibrationProgress = 0
+            calibrationMessage = "Hold your head still on the dot."
         case let .captured(_, next):
             calibrationProgress = 0
+            calibrationMessage = nil
             deps.feedback.play(.calibrationStep)
             enter(.calibrating(next))
             announce(next.prompt)
@@ -62,13 +66,14 @@ extension AppCoordinator {
     /// session ends it suggests a sensitivity: nod accepts, shake keeps the current one.
     func handlePractice(raw: HeadPose, filtered: HeadPose) {
         guard var session = practice, let output = engine?.process(raw: raw, filtered: filtered) else { return }
+        applyGestureFreeze(output)
         acceptTarget(output.target)
         let rect = pointingRect
         let aspect = Double(rect.width / max(rect.height, 1))
         let pointer = engine?.normalized(output.target) ?? .center
         var changed = session.update(pointer: pointer, aspect: aspect, time: raw.timestamp)
 
-        for case let .perform(gesture, point) in output.commands {
+        for case let .perform(gesture, point, _, _) in output.commands {
             switch (session.phase, gesture) {
             case (.running, .nod):
                 let hit = session.registerNod(at: engine?.normalized(point) ?? pointer, aspect: aspect)

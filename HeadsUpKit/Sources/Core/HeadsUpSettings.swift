@@ -7,24 +7,17 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     /// 0.25…1.5. At 1.0 the calibrated corners reach the screen corners; lower values
     /// need more head turn for the same pointer travel (calmer).
     public var sensitivity: Double = 0.6
-    /// Backlash width while the pointer is moving.
+    /// Once the head has been still, it must move this far before the pointer moves again.
+    /// The dead zone only holds the pointer; it never offsets the mapping.
     public var deadZoneDegrees: Double = 0.6
-    /// Once still, the head must move this far before the pointer starts moving again.
-    public var deadZoneStartDegrees: Double = 1.0
-    /// How long without movement counts as "still" for the start threshold.
+    /// How long without a dead-zone-sized movement counts as "still".
     public var deadZoneSettleTime: Double = 0.25
-    /// Below this head speed precision damping applies (fine control).
-    public var precisionSpeedDegPerSec: Double = 15
-    /// Gain multiplier for slow movement (1 = off).
-    public var precisionGain: Double = 0.5
-    /// How fast the damping offset is recovered during deliberate movement (per second).
-    public var precisionRecoveryPerSec: Double = 3
     /// false = map to the main display only; true = map to the union of all displays.
     public var spanAllDisplays: Bool = false
 
     // MARK: Rendering
-    /// Critically damped spring stiffness (ω²). 5000 settles in about 80 ms.
-    public var pointerSpringStiffness: Double = 5000
+    /// Critically damped spring stiffness (ω²). 14000 settles (2 %) in about 49 ms.
+    public var pointerSpringStiffness: Double = 14000
     /// Moves smaller than this (points) are not posted.
     public var minMoveDistance: Double = 0.5
     /// Pause/resume/recenter glide.
@@ -33,8 +26,8 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     public var rollbackGlideDuration: Double = 0.08
 
     // MARK: Smoothing (One Euro filter)
-    public var filterMinCutoff: Double = 0.5
-    public var filterBeta: Double = 0.005
+    public var filterMinCutoff: Double = 1.0
+    public var filterBeta: Double = 0.01
     public var filterDCutoff: Double = 1.0
 
     // MARK: Axis conventions (flip if the hardware reports the opposite sign)
@@ -55,7 +48,7 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     public var gestureOnsetLookback: Double = 0.1
     public var cursorHistoryDuration: Double = 0.6
     /// Double nod toggles in-place scroll mode. Off = single nods click with no delay.
-    public var doubleNodEnabled: Bool = true
+    public var doubleNodEnabled: Bool = false
     /// Both nods must start within this window.
     public var doubleNodWindow: Double = 0.9
     /// After a nod finishes, wait this long for a second nod before clicking.
@@ -74,7 +67,14 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     public var calibrationTargetInset: Double = 0.05
     public var autoRecenterStillDuration: Double = 2.0
     public var autoRecenterToleranceDegrees: Double = 1.5
-    public var practiceEnabled: Bool = true
+    /// Each capture is the median raw pose over this final part of the dwell.
+    public var calibrationCaptureWindow: Double = 0.75
+    /// A capture is only accepted if the head turned slower than this throughout the window.
+    public var calibrationMaxCaptureRateDegPerSec: Double = 5
+    /// If the final center re-check differs from the first center by more than this, redo.
+    public var calibrationCenterDriftDegrees: Double = 3
+    /// Practice never changes sensitivity on its own; it only suggests (nod to accept).
+    public var practiceEnabled: Bool = false
     public var practiceDuration: Double = 20
     /// Practice target radius as a fraction of the screen height.
     public var practiceTargetRadius: Double = 0.08
@@ -119,13 +119,19 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
 
     // MARK: Magnetic snapping
     public var snapEnabled: Bool = true
-    public var magnetStrength: Double = 0.6
-    public var snapRadius: Double = 40
-    public var snapStickiness: Double = 0.5
+    public var magnetStrength: Double = 0.3
+    public var snapRadius: Double = 20
+    /// Inside a target the pointer moves this fraction of the head movement (1 = no stickiness).
+    public var snapStickiness: Double = 0.85
     public var snapReleaseFactor: Double = 1.4
-    public var snapReleaseSpeedDegPerSec: Double = 40
-    /// Snapping only engages below this head speed.
-    public var snapEngageMaxSpeedDegPerSec: Double = 20
+    /// Any head turn faster than this releases the snap immediately.
+    public var snapReleaseSpeedDegPerSec: Double = 20
+    /// Turning the head this far from where the snap began releases it.
+    public var snapReleaseAngleDegrees: Double = 1.5
+    /// Snapping only engages after the head has been slower than this…
+    public var snapEngageMaxSpeedDegPerSec: Double = 8
+    /// …for this long.
+    public var snapEngageStillTime: Double = 0.15
     /// Targets larger than this fraction of the screen are containers and ignored.
     public var snapMaxTargetScreenFraction: Double = 0.4
     public var targetQueryInterval: Double = 0.15

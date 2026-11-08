@@ -6,6 +6,7 @@ extension AppCoordinator {
     func handle(pose sensorPose: HeadPose) {
         let interval = Self.signposter.beginInterval("pose")
         defer { Self.signposter.endInterval("pose", interval) }
+        lastPoseTime = sensorPose.timestamp
         recorder.record(sensorPose)
         meter.recordSample()
         if !isHeadphonesConnected { handleConnection(.connected) }
@@ -20,7 +21,7 @@ extension AppCoordinator {
         case .needsPermissions, .waitingForHeadphones:
             break
         case .calibrating:
-            handleCalibration(filtered)
+            handleCalibration(raw)  // raw pose only: no filter, sensitivity, snapping or spring
         case .awaitingRecenter:
             handleTilt(raw)
             if state == .awaitingRecenter { handleAutoRecenter(filtered) }
@@ -121,6 +122,7 @@ extension AppCoordinator {
 
     private func handleTracking(raw: HeadPose, filtered: HeadPose) {
         guard let output = engine?.process(raw: raw, filtered: filtered) else { return }
+        applyGestureFreeze(output)
         acceptTarget(output.target)
         isSnapped = output.snapped != nil
         if output.didSnap && settings.snapTickEnabled { deps.feedback.play(.snapTick) }
@@ -129,9 +131,34 @@ extension AppCoordinator {
         if !isNearEdge(output.target) { scrollAnchor = output.target }
         queryTargetsIfNeeded(output, time: raw.timestamp)
 
-        for case let .perform(gesture, point) in output.commands {
-            perform(gesture, at: point)
+        for case let .perform(gesture, point, onset, snapped) in output.commands {
+            perform(gesture, at: rollbackPoint(enginePoint: point, onset: onset, snapped: snapped))
         }
+    }
+
+    /// At a gesture onset freeze the real pointer exactly where it is (the spring stops, no
+    /// moves are posted); when the candidate is rejected, motion resumes from there.
+    func applyGestureFreeze(_ output: TrackingEngine.Output) {
+        if let decision = output.decision { logGesture(decision) }
+        if output.didFreeze {
+            let here = lastPostedPoint ?? animator.position ?? deps.cursor.currentPosition
+            animator.place(at: here)
+            pointerFrozen = true
+        } else if !output.isFrozen {
+            pointerFrozen = false
+        }
+    }
+
+    /// Where a confirmed gesture acts: the snapped target's center, otherwise where the
+    /// pointer actually was just before the gesture began.
+    func rollbackPoint(enginePoint: CGPoint, onset: TimeInterval, snapped: ClickTarget?) -> CGPoint {
+        if let snapped { return snapped.center }
+        return postedHistory.point(at: onset - settings.gestureOnsetLookback) ?? lastPostedPoint ?? enginePoint
+    }
+
+    func logGesture(_ decision: GestureDecision) {
+        telemetry.appendGestureLog(decision.logLine)
+        Self.log.debug("gesture \(decision.logLine, privacy: .public)")
     }
 
     func acceptTarget(_ point: CGPoint) {
@@ -147,10 +174,14 @@ extension AppCoordinator {
         lastGesture = gesture
         switch dispatcher.action(for: gesture) {
         case .click:
-            // Glide back to the rollback point, then click there (see `completeGlide`).
-            glideCounter += 1
-            pendingAction = PendingAction(token: glideCounter, gesture: gesture, point: point)
-            animator.glide(to: point, duration: settings.rollbackGlideDuration, token: glideCounter)
+            // Click immediately where the pointer was at onset; it hasn't moved since.
+            postAction { dispatcher.dispatch(gesture, at: point) }
+            animator.place(at: point)
+            lastPostedPoint = point
+            pointerTarget = point
+            pointerFrozen = false
+            pressingUntil = deps.clock() + 0.2
+            didPerformClick()
         case .escape:
             postAction { dispatcher.dispatch(gesture, at: point) }
             animator.glide(to: point, duration: settings.rollbackGlideDuration)

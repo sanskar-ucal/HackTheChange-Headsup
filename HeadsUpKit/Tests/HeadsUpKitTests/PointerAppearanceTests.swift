@@ -63,8 +63,11 @@ final class PointerAppearanceTests: XCTestCase {
         XCTAssertEqual(settings.pointerSize, .large)
         XCTAssertTrue(settings.pointerHighContrast)
         XCTAssertEqual(settings.sensitivity, 0.6)
-        XCTAssertEqual(settings.filterMinCutoff, 0.5)
+        XCTAssertEqual(settings.filterMinCutoff, 1.0, "v1 One Euro defaults")
+        XCTAssertEqual(settings.filterBeta, 0.01)
         XCTAssertEqual(settings.deadZoneDegrees, 0.6)
+        XCTAssertFalse(settings.doubleNodEnabled)
+        XCTAssertFalse(settings.practiceEnabled)
         var circle = settings
         circle.pointerStyle = .greenCircle
         XCTAssertEqual(circle.resolvedPointerColor, .green)

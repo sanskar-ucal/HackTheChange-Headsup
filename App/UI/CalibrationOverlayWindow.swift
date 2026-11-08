@@ -60,7 +60,7 @@ struct CalibrationOverlayView: View {
                     DwellTarget(progress: coordinator.calibrationProgress)
                         .position(x: target.x * proxy.size.width, y: target.y * proxy.size.height)
                     instructions(for: step)
-                        .position(x: proxy.size.width / 2, y: proxy.size.height * (step == .center ? 0.68 : 0.5))
+                        .position(x: proxy.size.width / 2, y: proxy.size.height * (step == .center || step == .centerCheck ? 0.68 : 0.5))
                 }
             }
         }
@@ -90,24 +90,27 @@ struct CalibrationOverlayView: View {
     }
 }
 
-/// A target dot with a ring that fills while the user dwells on it.
+/// A large target with a ring that fills while the user dwells on it.
 struct DwellTarget: View {
     let progress: Double
 
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.25), lineWidth: 6)
-                .frame(width: 64, height: 64)
+                .fill(Color.white.opacity(0.12))
+                .frame(width: 120, height: 120)
+            Circle()
+                .stroke(Color.white.opacity(0.35), lineWidth: 10)
+                .frame(width: 120, height: 120)
             Circle()
                 .trim(from: 0, to: progress)
-                .stroke(.green, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .stroke(.green, style: StrokeStyle(lineWidth: 10, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .frame(width: 64, height: 64)
+                .frame(width: 120, height: 120)
                 .animation(.linear(duration: 0.1), value: progress)
             Circle()
                 .fill(.white)
-                .frame(width: 16, height: 16)
+                .frame(width: 24, height: 24)
         }
     }
 }
