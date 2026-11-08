@@ -7,12 +7,13 @@ public enum HeadsUpAction: String, Sendable, Equatable, Codable {
     case escape
     case togglePause
     case recenter
+    case toggleScrollMode
     case none
 }
 
 /// Maps gestures to actions and performs the input actions (click, escape) together with
-/// their feedback cue. App-control actions (pause, recenter) are returned to the
-/// coordinator, which owns the state machine.
+/// their feedback cue. App-control actions (pause, recenter, scroll mode) are returned to
+/// the coordinator, which owns the state machine.
 @MainActor
 public final class ActionDispatcher {
     public var mapping: [HeadGesture: HeadsUpAction]
@@ -22,6 +23,7 @@ public final class ActionDispatcher {
 
     public static let defaultMapping: [HeadGesture: HeadsUpAction] = [
         .nod: .click,
+        .doubleNod: .toggleScrollMode,
         .shake: .escape,
         .tiltHoldLeft: .togglePause,
         .tiltHoldRight: .recenter,
@@ -48,10 +50,9 @@ public final class ActionDispatcher {
             cursor.click(at: point)
             feedback.play(.select)
         case .escape:
-            cursor.move(to: point)
             cursor.pressKey(.escape)
             feedback.play(.cancel)
-        case .togglePause, .recenter, .none:
+        case .togglePause, .recenter, .toggleScrollMode, .none:
             break
         }
         return action

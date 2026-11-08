@@ -26,6 +26,11 @@ struct LiveReadoutView: View {
             Text(String(format: "Samples: %.0f/s %@", telemetry.samplesPerSecond,
                         telemetry.isAppActive ? "(HeadsUp frontmost)" : "(in background)"))
                 .monospacedDigit()
+            if let latency = telemetry.pointerLatencyMs {
+                Text(String(format: "Sample → cursor: %.1f ms", latency))
+                    .monospacedDigit()
+                    .foregroundStyle(latency <= 30 ? Color.secondary : Color.orange)
+            }
             Text(backgroundText)
                 .font(.caption)
                 .foregroundStyle(backgroundOK ? Color.secondary : Color.orange)

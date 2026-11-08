@@ -59,7 +59,8 @@ public struct NodShakeRecognizer: GestureRecognizer {
 
     private var phase = Phase.idle
     private var cooldownUntil: TimeInterval = -.infinity
-    private var needsRearm = false
+    /// True after a confirm/cancel until both rates drop below the onset rate.
+    public private(set) var needsRearm = false
 
     public init(config: NodShakeConfig) {
         self.config = config
@@ -68,6 +69,15 @@ public struct NodShakeRecognizer: GestureRecognizer {
     public var isCandidateActive: Bool {
         if case .idle = phase { return false }
         return true
+    }
+
+    /// Lets a follow-up gesture start immediately (used for double nods).
+    public mutating func clearCooldown() {
+        cooldownUntil = -.infinity
+    }
+
+    public mutating func startCooldown(until time: TimeInterval) {
+        cooldownUntil = max(cooldownUntil, time)
     }
 
     public mutating func reset() {

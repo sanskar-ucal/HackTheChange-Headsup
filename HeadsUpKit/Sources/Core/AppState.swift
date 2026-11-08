@@ -43,18 +43,36 @@ public enum PauseReason: String, Sendable, Equatable {
     case headphonesDisconnected
 }
 
-/// Top-level state of the app. Synthetic input events are only ever posted in `.tracking`.
+/// Top-level state of the app.
 public enum AppState: Sendable, Equatable {
     case needsPermissions
     case waitingForHeadphones
     case calibrating(CalibrationStep)
+    /// First-run practice targets after calibration.
+    case practicing
     /// A saved calibration exists but the yaw reference must be re-established
     /// (tilt-hold right, or hold still for a moment).
     case awaitingRecenter
     case tracking
+    /// In-place scroll mode (double nod): the pointer is frozen and head pitch scrolls.
+    case scrollMode
+    /// Voice input is listening for speech to put into the focused text field.
+    case listening
+    /// Text was inserted: nod submits (Return), shake undoes, waiting keeps it.
+    case voiceReview
     case paused
 
-    public var allowsEventPosting: Bool { self == .tracking }
+    /// Pointer moves may be posted.
+    public var allowsPointerMotion: Bool { self == .tracking || self == .practicing }
+    /// Clicks, key presses and scrolling may be posted.
+    public var allowsActions: Bool {
+        switch self {
+        case .tracking, .scrollMode, .listening, .voiceReview: return true
+        default: return false
+        }
+    }
+    /// Any synthetic event at all.
+    public var allowsEventPosting: Bool { allowsPointerMotion || allowsActions }
 
     public var isCalibrating: Bool {
         if case .calibrating = self { return true }
@@ -66,8 +84,12 @@ public enum AppState: Sendable, Equatable {
         case .needsPermissions: return "Needs permissions"
         case .waitingForHeadphones: return "Waiting for AirPods"
         case .calibrating(let step): return "Calibrating (\(step.number) of \(CalibrationStep.allCases.count))"
+        case .practicing: return "Practice"
         case .awaitingRecenter: return "Hold still to recenter"
         case .tracking: return "Tracking"
+        case .scrollMode: return "Scroll mode"
+        case .listening: return "Listening"
+        case .voiceReview: return "Nod to submit, shake to undo"
         case .paused: return "Paused"
         }
     }

@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import HeadsUpKit
+import QuartzCore
 
 /// Composition root: builds the concrete services and injects them into the coordinator.
 @MainActor
@@ -14,17 +15,33 @@ final class AppEnvironment {
         settingsStore = SettingsStore()
         permissions = SystemPermissionsService()
         let settings = settingsStore.settings
+        let store = settingsStore
 
         let dependencies = AppCoordinator.Dependencies(
             motionSource: Self.makeMotionSource(),
             cursor: CGEventCursorController(),
+            scroll: CGEventScrollController(),
             feedback: AudioFeedbackService(volume: settings.feedbackVolume, muted: settings.feedbackMuted),
             announcer: SpeechAnnouncer(isEnabled: settings.speechEnabled),
             permissions: permissions,
             calibrationStore: UserDefaultsCalibrationStore(),
             keepAlive: SilentAudioKeepAlive(),
+            frameClock: DisplayLinkFrameClock(),
+            targets: AccessibilityTargetProvider(
+                searchRadius: CGFloat(settings.targetSearchRadius), maxElements: settings.targetMaxElements,
+                messagingTimeout: Float(settings.axMessagingTimeout)),
+            focusReader: AXFocusedElementReader(messagingTimeout: Float(settings.axMessagingTimeout)),
+            speech: AppleSpeechToTextService(),
+            textInserter: AXTextInserter(),
             screenGeometry: { ScreenGeometry.current() },
-            isAppActive: { NSApp.isActive })
+            isAppActive: { NSApp.isActive },
+            clock: { CACurrentMediaTime() },
+            schedule: { delay, work in
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    MainActor.assumeIsolated { work() }
+                }
+            },
+            updateSettings: { [weak store] in store?.settings = $0 })
         coordinator = AppCoordinator(dependencies: dependencies, settings: settings)
 
         settingsStore.$settings

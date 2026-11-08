@@ -4,6 +4,8 @@ import Foundation
 /// Per-sample processing: filtering, tilt-holds, calibration, recentering and tracking.
 extension AppCoordinator {
     func handle(pose sensorPose: HeadPose) {
+        let interval = Self.signposter.beginInterval("pose")
+        defer { Self.signposter.endInterval("pose", interval) }
         recorder.record(sensorPose)
         meter.recordSample()
         if !isHeadphonesConnected { handleConnection(.connected) }
@@ -27,10 +29,20 @@ extension AppCoordinator {
         case .tracking:
             handleTilt(raw)
             if state == .tracking { handleTracking(raw: raw, filtered: filtered) }
+        case .practicing:
+            handleTilt(raw)
+            if state == .practicing { handlePractice(raw: raw, filtered: filtered) }
+        case .scrollMode:
+            handleTilt(raw)
+            if state == .scrollMode { handleScrollMode(raw: raw, filtered: filtered) }
+        case .listening, .voiceReview:
+            handleTilt(raw)
+            if state == .listening || state == .voiceReview { handleVoiceGestures(raw) }
         }
+        fallbackFrameIfStalled()
     }
 
-    // MARK: Tilt-hold (works in tracking, awaitingRecenter and paused)
+    // MARK: Tilt-hold
 
     private func handleTilt(_ pose: HeadPose) {
         for event in tilt.process(pose) {
@@ -44,15 +56,13 @@ extension AppCoordinator {
                 guard isTiltAvailable(gesture) else { continue }
                 lastGesture = gesture
                 switch dispatcher.action(for: gesture) {
-                case .togglePause:
-                    togglePause()
-                case .recenter:
-                    recenter()
+                case .togglePause: togglePause()
+                case .recenter: recenter()
+                case .toggleScrollMode: enterScrollMode()
                 case .click, .escape:
                     let point = deps.cursor.currentPosition
-                    post { dispatcher.dispatch(gesture, at: point) }
-                case .none:
-                    break
+                    postAction { dispatcher.dispatch(gesture, at: point) }
+                case .none: break
                 }
             case .candidateBegan, .candidateCancelled:
                 break
@@ -60,15 +70,18 @@ extension AppCoordinator {
         }
     }
 
-    /// While paused only the pause toggle works, so the user can always resume.
+    /// While paused or using voice input only the pause toggle works, so the user can always resume.
     private func isTiltAvailable(_ gesture: HeadGesture) -> Bool {
-        state != .paused || dispatcher.action(for: gesture) == .togglePause
+        switch state {
+        case .paused, .listening, .voiceReview: return dispatcher.action(for: gesture) == .togglePause
+        default: return true
+        }
     }
 
     // MARK: Recentering
 
-    /// Makes the current pose neutral (keeping the calibrated ranges) and puts the cursor
-    /// in the center of the screen.
+    /// Makes the current pose neutral (keeping the calibrated ranges) and glides the pointer
+    /// to the center of the screen.
     public func recenter() {
         guard state == .tracking || state == .awaitingRecenter,
               let pose = lastFilteredPose, let current = calibration else { return }
@@ -77,8 +90,8 @@ extension AppCoordinator {
         deps.calibrationStore.save(updated)
         tilt.rollReference = pose.roll
         needsRecenter = false
-        enterTracking(cursorAt: nil)
-        moveToCenter(at: pose.timestamp)
+        enterTracking(cursorAt: deps.cursor.currentPosition, glide: false)
+        glideToCenter(at: pose.timestamp)
         deps.feedback.play(.recentered)
     }
 
@@ -97,73 +110,73 @@ extension AppCoordinator {
         }
     }
 
-    private func moveToCenter(at time: TimeInterval) {
+    func glideToCenter(at time: TimeInterval) {
         guard let center = engine?.centerPoint else { return }
-        post { deps.cursor.move(to: center) }
+        animator.glide(to: center, duration: settings.glideDuration)
+        pointerTarget = center
         engine?.noteCursor(at: center, time: time)
     }
 
     // MARK: Tracking
 
     private func handleTracking(raw: HeadPose, filtered: HeadPose) {
-        let commands = engine?.process(raw: raw, filtered: filtered) ?? []
-        for command in commands {
-            switch command {
-            case let .move(point):
-                post { deps.cursor.move(to: point) }
-            case let .perform(gesture, point):
-                lastGesture = gesture
-                post { dispatcher.dispatch(gesture, at: point) }
-            }
+        guard let output = engine?.process(raw: raw, filtered: filtered) else { return }
+        acceptTarget(output.target)
+        isSnapped = output.snapped != nil
+        if output.didSnap && settings.snapTickEnabled { deps.feedback.play(.snapTick) }
+
+        scrollVelocity = ScrollVelocity.edgePush(output.overshoot, settings: settings)
+        if !isNearEdge(output.target) { scrollAnchor = output.target }
+        queryTargetsIfNeeded(output, time: raw.timestamp)
+
+        for case let .perform(gesture, point) in output.commands {
+            perform(gesture, at: point)
         }
     }
 
-    // MARK: Calibration
-
-    func beginCalibration() {
-        guard isHeadphonesConnected else {
-            enter(.waitingForHeadphones)
-            return
+    func acceptTarget(_ point: CGPoint) {
+        pointerTarget = point
+        targetUpdatedAt = deps.clock()
+        if glideOnNextTarget {
+            glideOnNextTarget = false
+            animator.glide(to: point, duration: settings.glideDuration)
         }
-        calibrationSession = CalibrationSession(settings: settings)
-        calibrationProgress = 0
-        calibrationMessage = nil
-        enter(.calibrating(.center))
-        announce(CalibrationStep.center.prompt)
     }
 
-    private func handleCalibration(_ pose: HeadPose) {
-        guard var session = calibrationSession else { return }
-        let update = session.process(pose)
-        calibrationSession = session
+    private func perform(_ gesture: HeadGesture, at point: CGPoint) {
+        lastGesture = gesture
+        switch dispatcher.action(for: gesture) {
+        case .click:
+            // Glide back to the rollback point, then click there (see `completeGlide`).
+            glideCounter += 1
+            pendingAction = PendingAction(token: glideCounter, gesture: gesture, point: point)
+            animator.glide(to: point, duration: settings.rollbackGlideDuration, token: glideCounter)
+        case .escape:
+            postAction { dispatcher.dispatch(gesture, at: point) }
+            animator.glide(to: point, duration: settings.rollbackGlideDuration)
+        case .toggleScrollMode:
+            enterScrollMode()
+        case .togglePause:
+            togglePause()
+        case .recenter:
+            recenter()
+        case .none:
+            break
+        }
+    }
 
-        switch update {
-        case let .progress(progress):
-            calibrationProgress = progress
-        case let .captured(_, next):
-            calibrationProgress = 0
-            deps.feedback.play(.calibrationStep)
-            enter(.calibrating(next))
-            announce(next.prompt)
-        case let .finished(result):
-            calibration = result
-            deps.calibrationStore.save(result)
-            tilt.rollReference = result.neutralRoll
-            needsRecenter = false
-            calibrationSession = nil
-            calibrationMessage = nil
-            calibrationProgress = 0
-            deps.feedback.play(.calibrationDone)
-            enterTracking(cursorAt: nil)
-            moveToCenter(at: pose.timestamp)
-            announce("Calibration complete. Nod to click, shake to cancel.")
-        case let .failed(error):
-            deps.feedback.play(.error)
-            calibrationMessage = error.userMessage
-            calibrationSession = CalibrationSession(settings: settings)
-            calibrationProgress = 0
-            enter(.calibrating(.center))
-            announce(error.userMessage + " " + CalibrationStep.center.prompt)
+    private func isNearEdge(_ point: CGPoint) -> Bool {
+        let rect = pointingRect.insetBy(dx: settings.scrollEdgeMargin, dy: settings.scrollEdgeMargin)
+        return !rect.contains(point)
+    }
+
+    private func queryTargetsIfNeeded(_ output: TrackingEngine.Output, time: TimeInterval) {
+        guard settings.snapEnabled, !output.isFrozen,
+              output.headSpeed <= settings.snapEngageMaxSpeedDegPerSec,
+              time - lastTargetQuery >= settings.targetQueryInterval else { return }
+        lastTargetQuery = time
+        deps.targets.requestTargets(near: output.rawPoint) { [weak self] targets in
+            self?.engine?.magnet.targets = targets
         }
     }
 
@@ -174,18 +187,5 @@ extension AppCoordinator {
         guard abs(pose.timestamp - lastTelemetryTime) >= interval else { return }
         lastTelemetryTime = pose.timestamp
         telemetry.pose = pose
-    }
-
-    /// Called once per diagnostics interval on the wall clock, so a stall in background
-    /// delivery shows up as 0 samples/s rather than a stale number.
-    func reportSampleRate(interval: TimeInterval) {
-        let rate = meter.takeRate(interval: interval)
-        let active = deps.isAppActive()
-        telemetry.samplesPerSecond = rate
-        telemetry.isAppActive = active
-        if !active { telemetry.backgroundSamplesPerSecond = rate }
-        guard isHeadphonesConnected else { return }
-        Self.log.info(
-            "motion samples/s=\(rate, format: .fixed(precision: 1), privacy: .public) frontmost=\(active, privacy: .public)")
     }
 }

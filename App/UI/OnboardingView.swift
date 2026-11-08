@@ -41,13 +41,30 @@ struct OnboardingView: View {
                 done: coordinator.isHeadphonesConnected
             ) { EmptyView() }
 
+            step(
+                number: 4, title: "Voice input (optional)",
+                detail: "Microphone and Speech Recognition let you speak into search fields after a nod-click.",
+                done: coordinator.permissionStatus.isVoiceInputReady
+            ) {
+                if coordinator.permissionStatus.microphone == .notDetermined {
+                    Button("Allow Microphone") { permissions.requestMicrophone() }
+                } else if coordinator.permissionStatus.microphone != .authorized {
+                    Button("Microphone Settings") { permissions.openMicrophoneSettings() }
+                }
+                if coordinator.permissionStatus.speechRecognition == .notDetermined {
+                    Button("Allow Speech Recognition") { permissions.requestSpeechRecognition() }
+                } else if coordinator.permissionStatus.speechRecognition != .authorized {
+                    Button("Speech Settings") { permissions.openSpeechRecognitionSettings() }
+                }
+            }
+
             Divider()
             Text(nextStepText)
                 .font(.callout)
             Spacer()
         }
         .padding(24)
-        .frame(minWidth: 440, minHeight: 480)
+        .frame(minWidth: 460, minHeight: 600)
         .onReceive(poll) { _ in coordinator.refreshPermissions() }
     }
 
@@ -64,8 +81,9 @@ struct OnboardingView: View {
         case .needsPermissions: return "Waiting for permissions…"
         case .waitingForHeadphones: return "Waiting for AirPods to send motion…"
         case .calibrating: return "Calibration has started. The user follows the spoken prompts."
+        case .practicing: return "Practice: the user points at three circles and nods."
         case .awaitingRecenter: return "Ready. The user holds still facing the screen to recenter."
-        case .tracking, .paused: return "All set. You can close this window."
+        case .tracking, .paused, .scrollMode, .listening, .voiceReview: return "All set. You can close this window."
         }
     }
 

@@ -10,6 +10,12 @@ public enum FeedbackCue: String, Sendable, Equatable, CaseIterable {
     case calibrationStep
     case calibrationDone
     case error
+    case scrollOn
+    case scrollOff
+    case listeningStart
+    case listeningStop
+    /// Very soft tick when the pointer snaps to a button or link.
+    case snapTick
 }
 
 /// Plays feedback cues. AirPods have no haptic actuator or public haptics API, so the
@@ -18,7 +24,8 @@ public enum FeedbackCue: String, Sendable, Equatable, CaseIterable {
 @MainActor
 public protocol FeedbackService: AnyObject {
     func play(_ cue: FeedbackCue)
-    func configure(volume: Double, muted: Bool)
+    /// `tickVolume` (0…1) scales `.snapTick` relative to the other cues.
+    func configure(volume: Double, muted: Bool, tickVolume: Double)
 }
 
 /// Speaks prompts and state changes.

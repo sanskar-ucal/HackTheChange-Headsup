@@ -13,8 +13,10 @@ struct MenuBarLabel: View {
     private var symbol: String {
         switch coordinator.state {
         case .tracking: return "airpodspro"
+        case .scrollMode: return "arrow.up.arrow.down.circle"
+        case .listening, .voiceReview: return "mic.circle"
         case .paused: return "pause.circle"
-        case .calibrating, .awaitingRecenter: return "scope"
+        case .calibrating, .awaitingRecenter, .practicing: return "scope"
         case .needsPermissions: return "exclamationmark.triangle"
         case .waitingForHeadphones: return "airpodspro.chargingcase.wireless"
         }
@@ -75,6 +77,9 @@ struct MenuBarView: View {
                 .disabled(coordinator.state == .needsPermissions || coordinator.state == .waitingForHeadphones)
             Button("Recenter") { coordinator.recenter() }
                 .disabled(coordinator.state != .tracking && coordinator.state != .awaitingRecenter)
+            if coordinator.state == .scrollMode {
+                Button("Exit scroll mode") { coordinator.exitScrollMode() }
+            }
             Button("Recalibrate") { coordinator.recalibrate() }
                 .disabled(!coordinator.permissionStatus.isReady)
             Button("Setup & permissions…", action: openOnboarding)
@@ -87,10 +92,10 @@ struct MenuBarView: View {
 
     private var stateColor: Color {
         switch coordinator.state {
-        case .tracking: return .green
+        case .tracking, .scrollMode, .listening, .voiceReview: return .green
         case .paused: return .secondary
         case .needsPermissions: return .red
-        case .calibrating, .awaitingRecenter, .waitingForHeadphones: return .orange
+        case .calibrating, .awaitingRecenter, .waitingForHeadphones, .practicing: return .orange
         }
     }
 }
@@ -114,6 +119,7 @@ extension HeadGesture {
     var displayName: String {
         switch self {
         case .nod: return "Nod (click)"
+        case .doubleNod: return "Double nod (scroll mode)"
         case .shake: return "Shake (Escape)"
         case .tiltHoldLeft: return "Tilt left (pause)"
         case .tiltHoldRight: return "Tilt right (recenter)"

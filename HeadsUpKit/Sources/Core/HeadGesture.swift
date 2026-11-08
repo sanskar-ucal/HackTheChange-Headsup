@@ -3,6 +3,8 @@ import Foundation
 /// A head gesture HeadsUp can recognize.
 public enum HeadGesture: String, Sendable, Equatable, Hashable, Codable, CaseIterable {
     case nod
+    /// Two nods within `doubleNodWindow`: toggles in-place scroll mode.
+    case doubleNod
     case shake
     case tiltHoldLeft
     case tiltHoldRight

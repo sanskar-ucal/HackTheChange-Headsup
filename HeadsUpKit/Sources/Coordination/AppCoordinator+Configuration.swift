@@ -6,35 +6,62 @@ extension AppCoordinator {
     public struct Dependencies {
         public var motionSource: MotionSource
         public var cursor: CursorController
+        public var scroll: ScrollController
         public var feedback: FeedbackService
         public var announcer: Announcer
         public var permissions: PermissionsProviding
         public var calibrationStore: CalibrationStoring
         public var keepAlive: BackgroundKeepAlive
+        public var frameClock: FrameClock
+        public var targets: TargetProvider
+        public var focusReader: FocusedElementReader
+        public var speech: SpeechToTextService
+        public var textInserter: TextInserter
         public var screenGeometry: @MainActor () -> ScreenGeometry
         public var isAppActive: @MainActor () -> Bool
+        /// Seconds on the frame clock's timebase (`CACurrentMediaTime`).
+        public var clock: @MainActor () -> TimeInterval
+        /// Runs `work` after a delay on the main actor.
+        public var schedule: @MainActor (TimeInterval, @escaping @MainActor () -> Void) -> Void
+        /// Persists a settings change made by the coordinator (accepted practice suggestion).
+        public var updateSettings: @MainActor (Settings) -> Void
 
         public init(
-            motionSource: MotionSource, cursor: CursorController, feedback: FeedbackService,
-            announcer: Announcer, permissions: PermissionsProviding, calibrationStore: CalibrationStoring,
-            keepAlive: BackgroundKeepAlive,
+            motionSource: MotionSource, cursor: CursorController, scroll: ScrollController,
+            feedback: FeedbackService, announcer: Announcer, permissions: PermissionsProviding,
+            calibrationStore: CalibrationStoring, keepAlive: BackgroundKeepAlive, frameClock: FrameClock,
+            targets: TargetProvider, focusReader: FocusedElementReader, speech: SpeechToTextService,
+            textInserter: TextInserter,
             screenGeometry: @escaping @MainActor () -> ScreenGeometry,
-            isAppActive: @escaping @MainActor () -> Bool
+            isAppActive: @escaping @MainActor () -> Bool,
+            clock: @escaping @MainActor () -> TimeInterval,
+            schedule: @escaping @MainActor (TimeInterval, @escaping @MainActor () -> Void) -> Void,
+            updateSettings: @escaping @MainActor (Settings) -> Void
         ) {
             self.motionSource = motionSource
             self.cursor = cursor
+            self.scroll = scroll
             self.feedback = feedback
             self.announcer = announcer
             self.permissions = permissions
             self.calibrationStore = calibrationStore
             self.keepAlive = keepAlive
+            self.frameClock = frameClock
+            self.targets = targets
+            self.focusReader = focusReader
+            self.speech = speech
+            self.textInserter = textInserter
             self.screenGeometry = screenGeometry
             self.isAppActive = isAppActive
+            self.clock = clock
+            self.schedule = schedule
+            self.updateSettings = updateSettings
         }
     }
 
     // MARK: Settings & screens
 
+    /// Applies new settings live (sensitivity, smoothing, snapping… no recalibration).
     public func apply(settings newSettings: Settings) {
         settings = newSettings
         poseFilter.configure(
@@ -43,12 +70,19 @@ extension AppCoordinator {
         stillness = StillnessDetector(
             toleranceDegrees: newSettings.autoRecenterToleranceDegrees, duration: newSettings.autoRecenterStillDuration)
         engine?.apply(newSettings)
-        deps.feedback.configure(volume: newSettings.feedbackVolume, muted: newSettings.feedbackMuted)
+        animator.stiffness = newSettings.pointerSpringStiffness
+        modeRecognizer.inner.config = NodShakeConfig(settings: newSettings)
+        modeRecognizer.config = DoubleNodConfig(settings: newSettings)
+        deps.feedback.configure(
+            volume: newSettings.feedbackVolume, muted: newSettings.feedbackMuted,
+            tickVolume: newSettings.snapTickEnabled ? newSettings.snapTickVolume : 0)
         deps.announcer.isEnabled = newSettings.speechEnabled
+        updatePointerContext()
     }
 
     public func refreshGeometry() {
         engine?.geometry = deps.screenGeometry()
+        deps.targets.invalidate()
     }
 
     public var screenGeometry: ScreenGeometry { deps.screenGeometry() }

@@ -2,72 +2,11 @@ import CoreGraphics
 import XCTest
 @testable import HeadsUpKit
 
-/// Wires an `AppCoordinator` to mocks and feeds it synthetic poses on a virtual clock.
-@MainActor
-final class CoordinatorHarness {
-    typealias S = TraceSynth
-
-    let motion: MockMotionSource
-    let cursor: MockCursor
-    let feedback: MockFeedback
-    let announcer: MockAnnouncer
-    let permissions: MockPermissions
-    let store: InMemoryCalibrationStore
-    let keepAlive: MockKeepAlive
-    let coordinator: AppCoordinator
-    private(set) var clock = 0.0
-
-    /// 1000×800 display; ±20° yaw and ±15° pitch reach the edges.
-    static let geometry = ScreenGeometry(displays: [CGRect(x: 0, y: 0, width: 1000, height: 800)])
-    static let calibration = Calibration(
-        neutralYaw: 0, neutralPitch: 0, neutralRoll: 0,
-        rangeLeft: AngleMath.radians(20), rangeRight: AngleMath.radians(20),
-        rangeUp: AngleMath.radians(15), rangeDown: AngleMath.radians(15))
-
-    init(savedCalibration: Calibration? = nil, permissionsReady: Bool = true) {
-        motion = MockMotionSource()
-        cursor = MockCursor()
-        feedback = MockFeedback()
-        announcer = MockAnnouncer()
-        permissions = MockPermissions()
-        permissions.status.accessibilityTrusted = permissionsReady
-        store = InMemoryCalibrationStore(calibration: savedCalibration)
-        keepAlive = MockKeepAlive()
-        var settings = Settings.defaults
-        settings.permissionPollInterval = 0
-        coordinator = AppCoordinator(
-            dependencies: .init(
-                motionSource: motion, cursor: cursor, feedback: feedback, announcer: announcer,
-                permissions: permissions, calibrationStore: store, keepAlive: keepAlive,
-                screenGeometry: { CoordinatorHarness.geometry }, isAppActive: { false }),
-            settings: settings)
-    }
-
-    func feed(_ duration: Double, yaw: [S.Component] = [], pitch: [S.Component] = [], roll: [S.Component] = []) {
-        for var pose in S.trace(duration: duration, yaw: yaw, pitch: pitch, roll: roll) {
-            pose.timestamp += clock
-            coordinator.handle(pose: pose)
-        }
-        clock += duration
-    }
-
-    func holdStill(_ duration: Double, yaw: Double = 0, pitch: Double = 0) {
-        feed(duration, yaw: [S.constant(yaw), S.noise(1)], pitch: [S.constant(pitch), S.noise(2)])
-    }
-
-    /// Saved calibration → connect → auto-recenter by holding still → tracking.
-    static func tracking() -> CoordinatorHarness {
-        let harness = CoordinatorHarness(savedCalibration: calibration)
-        harness.coordinator.refreshPermissions()
-        harness.coordinator.handleConnection(.connected)
-        harness.holdStill(2.6)
-        return harness
-    }
-}
-
 @MainActor
 final class AppCoordinatorTests: XCTestCase {
     typealias S = TraceSynth
+
+    private func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat { hypot(a.x - b.x, a.y - b.y) }
 
     func testFirstLaunchFlowFromPermissionsThroughCalibrationToTracking() {
         let h = CoordinatorHarness(permissionsReady: false)
@@ -89,17 +28,47 @@ final class AppCoordinatorTests: XCTestCase {
         XCTAssertEqual(h.coordinator.state, .tracking)
         XCTAssertEqual(h.feedback.cues.filter { $0 == .calibrationStep }.count, 4)
         XCTAssertTrue(h.feedback.cues.contains(.calibrationDone))
-        let saved = try? XCTUnwrap(h.store.calibration)
-        XCTAssertEqual(AngleMath.degrees(saved?.rangeRight ?? 0), 20, accuracy: 1)
-        XCTAssertEqual(AngleMath.degrees(saved?.rangeDown ?? 0), 15, accuracy: 1)
-        XCTAssertTrue(h.cursor.events.contains(.move(CGPoint(x: 500, y: 400))), "cursor jumps to center")
+        XCTAssertEqual(AngleMath.degrees(h.store.calibration?.rangeRight ?? 0), 20, accuracy: 1)
+        XCTAssertEqual(AngleMath.degrees(h.store.calibration?.rangeDown ?? 0), 15, accuracy: 1)
+        XCTAssertTrue(h.cursor.moves.contains(CGPoint(x: 500, y: 400)), "pointer glides to center")
+    }
+
+    func testCalibrationIsFollowedByPracticeWhenEnabled() {
+        var settings = CoordinatorHarness.testSettings
+        settings.practiceEnabled = true
+        let h = CoordinatorHarness(settings: settings)
+        h.coordinator.refreshPermissions()
+        h.coordinator.handleConnection(.connected)
+        for (yaw, pitch) in [(0.0, 0.0), (-18, 13.5), (18, 13.5), (18, -13.5), (-18, -13.5)] {
+            h.holdStill(3, yaw: yaw, pitch: pitch)
+        }
+        XCTAssertEqual(h.coordinator.state, .practicing)
+        XCTAssertNotNil(h.coordinator.practice)
+    }
+
+    func testPracticeSuggestionIsAcceptedByNod() {
+        var settings = CoordinatorHarness.testSettings
+        settings.practiceEnabled = true
+        settings.practiceDuration = 1
+        let h = CoordinatorHarness(settings: settings)
+        h.coordinator.refreshPermissions()
+        h.coordinator.handleConnection(.connected)
+        for (yaw, pitch) in [(0.0, 0.0), (-18, 13.5), (18, 13.5), (18, -13.5), (-18, -13.5)] {
+            h.holdStill(3, yaw: yaw, pitch: pitch)
+        }
+        h.holdStill(1.2, yaw: -18, pitch: -13.5)  // practice times out without reaching a target
+        XCTAssertEqual(h.coordinator.practice?.phase, .suggesting(1.1))
+        h.feed(2, yaw: [S.constant(-18)], pitch: [S.constant(-13.5), S.nod(at: 0.3)])
+        XCTAssertEqual(h.coordinator.state, .tracking)
+        XCTAssertEqual(h.settingsUpdates.last?.sensitivity, 1.1)
+        XCTAssertEqual(h.coordinator.settings.sensitivity, 1.1)
+        XCTAssertEqual(h.cursor.clicks, [], "practice nods never click")
     }
 
     func testRejectedCalibrationRestarts() {
         let h = CoordinatorHarness()
         h.coordinator.refreshPermissions()
         h.coordinator.handleConnection(.connected)
-        // Left corners only 3° from center: the left range is too small.
         for (yaw, pitch) in [(0.0, 0.0), (-3, 13.5), (18, 13.5), (18, -13.5), (-3, -13.5)] {
             h.holdStill(3, yaw: yaw, pitch: pitch)
         }
@@ -110,7 +79,7 @@ final class AppCoordinatorTests: XCTestCase {
         XCTAssertTrue(h.cursor.events.isEmpty, "no events while calibrating")
     }
 
-    func testSavedCalibrationRequiresRecenterThenTracks() {
+    func testSavedCalibrationRequiresRecenterThenGlidesToCenter() {
         let h = CoordinatorHarness(savedCalibration: CoordinatorHarness.calibration)
         h.coordinator.refreshPermissions()
         h.coordinator.handleConnection(.connected)
@@ -121,7 +90,11 @@ final class AppCoordinatorTests: XCTestCase {
         h.holdStill(1.6)
         XCTAssertEqual(h.coordinator.state, .tracking)
         XCTAssertTrue(h.feedback.cues.contains(.recentered))
-        XCTAssertEqual(h.cursor.events.first, .move(CGPoint(x: 500, y: 400)))
+        // A glide, not a jump: several intermediate moves from (100,100) to the center.
+        XCTAssertGreaterThan(h.cursor.moves.count, 2)
+        XCTAssertLessThan(distance(h.cursor.moves.first ?? .zero, CGPoint(x: 100, y: 100)),
+                          distance(CGPoint(x: 500, y: 400), CGPoint(x: 100, y: 100)))
+        XCTAssertLessThan(distance(h.cursor.moves.last ?? .zero, CGPoint(x: 500, y: 400)), 2)
     }
 
     func testTiltRightRecentersFromAwaitingRecenter() {
@@ -140,6 +113,7 @@ final class AppCoordinatorTests: XCTestCase {
         XCTAssertEqual(h.coordinator.state, .paused)
         XCTAssertEqual(h.coordinator.pauseReason, .user)
         XCTAssertEqual(h.feedback.cues.last, .paused)
+        XCTAssertEqual(h.coordinator.pointerContext, .paused)
 
         h.holdStill(0.5)
         h.feed(2.4, roll: [S.plateau(-25, from: 0.1, to: 2.0)])
@@ -155,7 +129,9 @@ final class AppCoordinatorTests: XCTestCase {
 
         h.feed(3, yaw: [S.pan(10), S.shake(at: 2.0)], pitch: [S.nod(at: 0.5), S.nod(at: 1.4)])
         h.feed(1, roll: [S.plateau(25, from: 0.1, to: 0.9)])  // tilt right is ignored while paused
+        h.holdStill(1, pitch: 25)  // would edge-scroll if tracking
         XCTAssertEqual(h.cursor.events, [])
+        XCTAssertEqual(h.scroll.calls, 0)
         XCTAssertEqual(h.coordinator.state, .paused)
     }
 
@@ -175,10 +151,10 @@ final class AppCoordinatorTests: XCTestCase {
     func testPointingFollowsHead() {
         let h = CoordinatorHarness.tracking()
         h.holdStill(2, yaw: 10, pitch: 7.5)  // half-way right and half-way up
-        guard case let .move(point)? = h.cursor.events.last else { return XCTFail("no move") }
-        // Within the 0.3° dead-zone lag (≈ 8 px here) of the exact mapping.
-        XCTAssertEqual(point.x, 750, accuracy: 10)
-        XCTAssertEqual(point.y, 200, accuracy: 10)
+        guard let point = h.cursor.moves.last else { return XCTFail("no move") }
+        // Within the 0.6° dead-zone lag (≈ 15 px here) of the exact mapping.
+        XCTAssertEqual(point.x, 750, accuracy: 18)
+        XCTAssertEqual(point.y, 200, accuracy: 18)
     }
 
     func testNodWhilePanningClicksAtRollbackPoint() {
@@ -187,19 +163,12 @@ final class AppCoordinatorTests: XCTestCase {
         h.feed(2.4, yaw: [S.pan(15), S.noise(13)], pitch: [S.nod(at: 0.8), S.noise(14)])
 
         XCTAssertEqual(h.cursor.clicks.count, 1)
-        guard let click = h.cursor.clicks.first,
-              let clickIndex = h.cursor.events.firstIndex(of: .click(click)),
-              case let .move(beforeOnset)? = h.cursor.events[..<clickIndex].last(where: {
-                  if case .move = $0 { return true } else { return false }
-              })
-        else { return XCTFail("expected moves before the click") }
-
+        guard let click = h.cursor.clicks.first else { return }
         // Rolled back to before the nod: vertically at the neutral line, not dragged down.
         XCTAssertEqual(click.y, 400, accuracy: 10)
-        // Horizontally where the pan had brought the cursor just before onset.
-        XCTAssertEqual(click.x, beforeOnset.x, accuracy: 50)
-        XCTAssertGreaterThan(click.x, 600, "the pan had moved the cursor right")
+        XCTAssertGreaterThan(click.x, 600, "the pan had moved the pointer right")
         XCTAssertTrue(h.feedback.cues.contains(.select))
+        XCTAssertNotEqual(h.coordinator.state, .scrollMode, "a single nod is not a double nod")
     }
 
     func testShakePressesEscape() {
@@ -214,15 +183,22 @@ final class AppCoordinatorTests: XCTestCase {
         h.feed(1.5, yaw: [S.pan(12)], pitch: [S.pan(-8)])
         XCTAssertEqual(h.cursor.clicks, [])
         XCTAssertEqual(h.cursor.keys, [])
-        XCTAssertGreaterThan(h.cursor.events.count, 20, "the cursor moved instead")
+        XCTAssertGreaterThan(h.cursor.moves.count, 20, "the pointer moved instead")
     }
 
     func testAllMovesStayOnScreen() {
         let h = CoordinatorHarness.tracking()
         h.feed(3, yaw: [S.pan(30)], pitch: [S.pan(-20)])
-        for case let .move(point) in h.cursor.events {
+        for point in h.cursor.moves {
             XCTAssertTrue(CoordinatorHarness.geometry.mainDisplay.contains(point), "\(point)")
         }
+    }
+
+    func testMovesSkipSubPointChanges() {
+        let h = CoordinatorHarness.tracking()
+        let before = h.cursor.moves.count
+        h.holdStill(2)  // only sensor noise
+        XCTAssertEqual(h.cursor.moves.count, before, "no posts for < 0.5 pt changes")
     }
 
     func testMissingAccessibilityBlocksEverything() {

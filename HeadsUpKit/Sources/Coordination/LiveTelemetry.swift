@@ -11,6 +11,8 @@ public final class LiveTelemetry: ObservableObject {
     /// one has been measured. This is the background-delivery check.
     @Published public internal(set) var backgroundSamplesPerSecond: Double?
     @Published public internal(set) var isAppActive = true
+    /// Sensor sample → posted cursor move, milliseconds (target: under 30 ms).
+    @Published public internal(set) var pointerLatencyMs: Double?
 
     public init() {}
 }

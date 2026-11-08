@@ -25,14 +25,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var environment = AppEnvironment()
     private let windows = WindowPresenter()
     private var calibrationOverlay: CalibrationOverlayController?
-    private var halo: CursorHaloController?
+    private var practiceOverlay: PracticeOverlayController?
+    private var pointerOverlay: PointerOverlayController?
     private var hotKey: GlobalHotKey?
     private var screenObserver: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let coordinator = environment.coordinator
         calibrationOverlay = CalibrationOverlayController(coordinator: coordinator)
-        halo = CursorHaloController(coordinator: coordinator)
+        practiceOverlay = PracticeOverlayController(coordinator: coordinator)
+        pointerOverlay = PointerOverlayController(coordinator: coordinator, store: environment.settingsStore)
         // ⌃⌥⌘H toggles pause: a caregiver safety switch.
         hotKey = GlobalHotKey { [weak coordinator] in coordinator?.togglePause() }
         screenObserver = NotificationCenter.default.addObserver(
@@ -46,11 +48,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        pointerOverlay?.restoreSystemCursor()
         environment.coordinator.stop()
     }
 
     func showSettings() {
-        windows.show(id: "settings", title: "HeadsUp Settings", size: CGSize(width: 520, height: 720)) {
+        windows.show(id: "settings", title: "HeadsUp Settings", size: CGSize(width: 600, height: 800)) {
             SettingsView(
                 store: environment.settingsStore,
                 telemetry: environment.coordinator.telemetry,
@@ -60,7 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func showOnboarding() {
-        windows.show(id: "onboarding", title: "Set up HeadsUp", size: CGSize(width: 480, height: 520)) {
+        windows.show(id: "onboarding", title: "Set up HeadsUp", size: CGSize(width: 500, height: 640)) {
             OnboardingView(coordinator: environment.coordinator, permissions: environment.permissions)
         }
     }

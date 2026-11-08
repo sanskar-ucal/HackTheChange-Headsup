@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 import OSLog
 
-/// Progress of a hold (tilt-hold or auto-recenter) for the cursor halo.
+/// Progress of a hold (tilt-hold or auto-recenter) for the pointer ring.
 public struct HoldProgress: Sendable, Equatable {
     public var gesture: HeadGesture
     public var fraction: Double
@@ -10,20 +10,24 @@ public struct HoldProgress: Sendable, Equatable {
 
 /// Owns the app state machine and wires motion → processing → output.
 ///
-/// States: needsPermissions → waitingForHeadphones → calibrating → tracking ⇄ paused.
-/// A launch with a saved calibration, or a reconnect, goes through awaitingRecenter
-/// because the AirPods' yaw reference resets. Synthetic events are only posted in
-/// `.tracking` (see `post(_:)`).
+/// States: needsPermissions → waitingForHeadphones → calibrating → practicing → tracking,
+/// with tracking ⇄ paused / scrollMode / listening → voiceReview. A launch with a saved
+/// calibration, or a reconnect, goes through awaitingRecenter. Sensor samples update the
+/// pointer *target*; `renderFrame(at:)` moves the real pointer at display rate. Synthetic
+/// events go through `postMotion` / `postAction`, which check `AppState`.
 @MainActor
 public final class AppCoordinator: ObservableObject {
-    @Published public private(set) var state: AppState = .needsPermissions
-    @Published public private(set) var pauseReason: PauseReason?
-    @Published public private(set) var permissionStatus: PermissionStatus
+    @Published public internal(set) var state: AppState = .needsPermissions
+    @Published public internal(set) var pauseReason: PauseReason?
+    @Published public internal(set) var permissionStatus: PermissionStatus
     @Published public internal(set) var isHeadphonesConnected = false
     @Published public internal(set) var holdProgress: HoldProgress?
     @Published public internal(set) var calibrationProgress: Double = 0
     @Published public internal(set) var calibrationMessage: String?
     @Published public internal(set) var lastGesture: HeadGesture?
+    @Published public internal(set) var pointerContext: PointerContext = .idle
+    @Published public internal(set) var transcript = ""
+    @Published public internal(set) var practice: PracticeSession?
 
     public let telemetry: LiveTelemetry
     public let recorder: MotionRecorder
@@ -41,12 +45,45 @@ public final class AppCoordinator: ObservableObject {
     var lastFilteredPose: HeadPose?
     var meter = SampleRateMeter()
     var lastTelemetryTime: TimeInterval = -.infinity
+
+    // Rendering
+    var animator: PointerAnimator
+    var pointerTarget: CGPoint?
+    var lastPostedPoint: CGPoint?
+    var lastFrameTime: TimeInterval?
+    var pendingAction: PendingAction?
+    var glideCounter = 0
+    var glideOnNextTarget = false
+    var pressingUntil: TimeInterval?
+    var isSnapped = false
+    var targetUpdatedAt: TimeInterval?
+    var latestLatencyMs: Double?
+
+    // Modes
+    var scrollVelocity = ScrollVelocity.zero
+    var scrollAnchor: CGPoint?
+    var scrollMode: ScrollModeRecognizer?
+    var modeRecognizer: DoubleNodRecognizer
+    var lastTargetQuery: TimeInterval = -.infinity
+    var voiceTarget: FocusedElement?
+    var voiceInsertion: InsertionRecord?
+    var voiceReviewStart: TimeInterval?
+    var lastClickTime: TimeInterval = -.infinity
+
     static let log = Logger(subsystem: "com.hackthechange.HeadsUp", category: "coordinator")
+    static let signposter = OSSignposter(subsystem: "com.hackthechange.HeadsUp", category: .pointsOfInterest)
 
     private var streamTasks: [Task<Void, Never>] = []
     private var permissionTimer: Timer?
     private var diagnosticsTimer: Timer?
     private var isStarted = false
+
+    /// An action that runs when the rollback glide reaches its point.
+    struct PendingAction {
+        var token: Int
+        var gesture: HeadGesture
+        var point: CGPoint
+    }
 
     public init(dependencies: Dependencies, settings: Settings, recorder: MotionRecorder? = nil) {
         let savedCalibration = dependencies.calibrationStore.load()
@@ -65,7 +102,11 @@ public final class AppCoordinator: ObservableObject {
         tilt = tiltRecognizer
         stillness = StillnessDetector(
             toleranceDegrees: settings.autoRecenterToleranceDegrees, duration: settings.autoRecenterStillDuration)
-        dependencies.feedback.configure(volume: settings.feedbackVolume, muted: settings.feedbackMuted)
+        animator = PointerAnimator(stiffness: settings.pointerSpringStiffness)
+        modeRecognizer = DoubleNodRecognizer(settings: settings)
+        dependencies.feedback.configure(
+            volume: settings.feedbackVolume, muted: settings.feedbackMuted,
+            tickVolume: settings.snapTickEnabled ? settings.snapTickVolume : 0)
         dependencies.announcer.isEnabled = settings.speechEnabled
     }
 
@@ -81,6 +122,8 @@ public final class AppCoordinator: ObservableObject {
         streamTasks.append(Task { [weak self] in
             for await change in source.connectionChanges { self?.handleConnection(change) }
         })
+        deps.frameClock.start { [weak self] timestamp in self?.renderFrame(at: timestamp) }
+        deps.focusReader.onFocusChange = { [weak self] in self?.handleFocusChange() }
         // Starting motion right away also triggers the system motion permission prompt.
         source.start()
         startDiagnostics()
@@ -92,6 +135,8 @@ public final class AppCoordinator: ObservableObject {
         streamTasks.removeAll()
         permissionTimer?.invalidate()
         diagnosticsTimer?.invalidate()
+        deps.frameClock.stop()
+        deps.speech.cancel()
         deps.motionSource.stop()
         deps.keepAlive.stop()
         isStarted = false
@@ -120,109 +165,6 @@ public final class AppCoordinator: ObservableObject {
         }
     }
 
-    // MARK: Headphones
-
-    func handleConnection(_ change: HeadphoneConnection) {
-        switch change {
-        case .connected:
-            guard !isHeadphonesConnected else { return }
-            isHeadphonesConnected = true
-            if state == .waitingForHeadphones || (state == .paused && pauseReason == .headphonesDisconnected) {
-                pauseReason = nil
-                proceed()
-            }
-        case .disconnected:
-            guard isHeadphonesConnected else { return }
-            isHeadphonesConnected = false
-            needsRecenter = true  // the yaw reference resets on reconnect
-            poseFilter.reset()
-            switch state {
-            case .tracking, .awaitingRecenter, .calibrating:
-                pause(reason: .headphonesDisconnected)
-            case .needsPermissions, .waitingForHeadphones, .paused:
-                break
-            }
-        }
-    }
-
-    // MARK: Commands (gestures, menu, hotkey)
-
-    public func togglePause() {
-        switch state {
-        case .paused: resume()
-        case .tracking, .awaitingRecenter, .calibrating: pause(reason: .user)
-        case .needsPermissions, .waitingForHeadphones: break
-        }
-    }
-
-    public func recalibrate() {
-        guard permissionStatus.isReady else { return }
-        beginCalibration()
-    }
-
-    func pause(reason: PauseReason) {
-        pauseReason = reason
-        calibrationSession = nil
-        enter(.paused)
-        deps.feedback.play(.paused)
-        switch reason {
-        case .user: announce("Paused. Tilt your head left and hold to resume.")
-        case .headphonesDisconnected: announce("Headphones disconnected. HeadsUp is paused.")
-        }
-    }
-
-    func resume() {
-        pauseReason = nil
-        deps.feedback.play(.resumed)
-        proceed()
-        if state == .tracking { announce("Resumed.") }
-    }
-
-    /// Moves to whichever state the current conditions allow.
-    func proceed() {
-        if !permissionStatus.isReady {
-            enter(.needsPermissions)
-        } else if !isHeadphonesConnected {
-            enter(.waitingForHeadphones)
-        } else if calibration == nil {
-            beginCalibration()
-        } else if needsRecenter {
-            stillness.reset()
-            enter(.awaitingRecenter)
-            announce("Look at the center of the screen and hold still to recenter.")
-        } else {
-            enterTracking(cursorAt: deps.cursor.currentPosition)
-        }
-    }
-
-    func enter(_ newState: AppState) {
-        holdProgress = nil
-        state = newState
-        switch newState {
-        case .needsPermissions, .waitingForHeadphones: deps.keepAlive.stop()
-        case .calibrating, .awaitingRecenter, .tracking, .paused: deps.keepAlive.start()
-        }
-    }
-
-    /// Builds a fresh tracking pipeline. `cursorAt` makes the cursor glide from there.
-    func enterTracking(cursorAt point: CGPoint?) {
-        guard let calibration else { return }
-        var engine = TrackingEngine(calibration: calibration, geometry: deps.screenGeometry(), settings: settings)
-        engine.reset(cursorAt: point)
-        self.engine = engine
-        enter(.tracking)
-    }
-
-    /// The single gate for synthetic input.
-    func post(_ body: () -> Void) {
-        guard state.allowsEventPosting else { return }
-        body()
-    }
-
-    func announce(_ text: String) {
-        deps.announcer.announce(text)
-    }
-
     // MARK: Diagnostics
 
     private func startDiagnostics() {
@@ -230,5 +172,19 @@ public final class AppCoordinator: ObservableObject {
         diagnosticsTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.reportSampleRate(interval: interval) }
         }
+    }
+
+    /// Called once per diagnostics interval on the wall clock, so a stall in background
+    /// delivery shows up as 0 samples/s rather than a stale number.
+    func reportSampleRate(interval: TimeInterval) {
+        let rate = meter.takeRate(interval: interval)
+        let active = deps.isAppActive()
+        telemetry.samplesPerSecond = rate
+        telemetry.isAppActive = active
+        telemetry.pointerLatencyMs = latestLatencyMs
+        if !active { telemetry.backgroundSamplesPerSecond = rate }
+        guard isHeadphonesConnected else { return }
+        Self.log.info(
+            "motion samples/s=\(rate, format: .fixed(precision: 1), privacy: .public) frontmost=\(active, privacy: .public)")
     }
 }
