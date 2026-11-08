@@ -1,91 +1,84 @@
 import type { ReactNode } from "react";
+import { GITHUB_URL } from "@/site.config";
 
-export function DownloadIcon({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg aria-hidden viewBox="0 0 20 20" className={className} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 3v10M5.5 9 10 13.5 14.5 9M4 16.5h12" />
-    </svg>
-  );
-}
+export const POINTER_GREEN = "#33D959";
 
-export function ArrowIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg aria-hidden viewBox="0 0 20 20" className={className} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 10h12M11 5l5 5-5 5" />
-    </svg>
-  );
-}
-
+/** `< >` glyph used on GitHub links. */
 export function CodeIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
-    <svg aria-hidden viewBox="0 0 20 20" className={className} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden viewBox="0 0 20 20" className={className} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
       <path d="M7 6 3 10l4 4M13 6l4 4-4 4" />
     </svg>
   );
 }
 
-const base =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[0.975rem] font-medium transition-[background-color,box-shadow,transform] duration-200 active:translate-y-px";
+/** Right arrow; rotate it for other directions. */
+export function ArrowIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 20 20" className={className} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 10h12M11 5l5 5-5 5" />
+    </svg>
+  );
+}
 
-export function ButtonLink({
-  href,
-  children,
-  variant = "primary",
-  className = "",
-  external = false,
-}: {
-  href: string;
-  children: ReactNode;
-  variant?: "primary" | "secondary";
-  className?: string;
-  external?: boolean;
-}) {
-  const styles =
-    variant === "primary"
-      ? "bg-accent text-white shadow-[0_1px_0_rgb(255_255_255/0.2)_inset,0_6px_16px_-6px_rgb(46_125_91/0.6)] hover:bg-accent-ink"
-      : "bg-white text-ink ring-1 ring-line shadow-[var(--shadow-card)] hover:ring-ink/30";
+/** The site's single call to action. */
+export function GitHubButton({ label, size = "lg", className = "" }: { label: string; size?: "md" | "lg"; className?: string }) {
+  const sizing = size === "lg" ? "min-h-14 px-7 text-[1.05rem]" : "min-h-11 px-5 text-[0.95rem]";
   return (
     <a
-      href={href}
-      className={`${base} ${styles} ${className}`}
-      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      href={GITHUB_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`inline-flex items-center justify-center gap-2.5 rounded-full bg-sky font-semibold text-navy transition-[background-color,transform] duration-200 hover:bg-white active:translate-y-px ${sizing} ${className}`}
     >
-      {children}
-      {external && <span className="sr-only"> (opens in a new tab)</span>}
+      <CodeIcon className="h-[1.15em] w-[1.15em]" />
+      {label}
+      <span className="sr-only"> (opens in a new tab)</span>
     </a>
   );
 }
 
-export function SectionHeading({
-  id,
-  eyebrow,
-  titleStart,
-  titleEmphasis,
-  body,
-  align = "left",
-}: {
-  id: string;
-  eyebrow: string;
-  titleStart: string;
-  titleEmphasis: string;
-  body?: string;
-  align?: "left" | "center";
-}) {
+/** Small uppercase label above a section title. */
+export function Eyebrow({ children, tone = "dark" }: { children: ReactNode; tone?: "dark" | "light" }) {
   return (
-    <div className={align === "center" ? "mx-auto max-w-2xl text-center" : "max-w-2xl"}>
-      <p className="mb-4 text-sm font-medium uppercase tracking-[0.14em] text-accent-ink">{eyebrow}</p>
-      <h2 id={id} className="serif text-[2.6rem] leading-[1.02] sm:text-6xl">
-        {titleStart} <span className="em">{titleEmphasis}</span>
-      </h2>
-      {body && <p className="mt-5 text-lg leading-relaxed text-ink-soft">{body}</p>}
-    </div>
+    <p className={`mb-5 text-sm font-semibold uppercase tracking-[0.16em] ${tone === "dark" ? "text-sky" : "text-navy"}`}>
+      {children}
+    </p>
   );
 }
 
+/** HeadsUp's real default pointer: the green circle. */
+export function PointerDot({ size = 28, className = "" }: { size?: number; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`relative block shrink-0 rounded-full border-[2.5px] ${className}`}
+      style={{ width: size, height: size, borderColor: POINTER_GREEN, background: `${POINTER_GREEN}40` }}
+    >
+      <span className="absolute left-1/2 top-1/2 h-[22%] w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: POINTER_GREEN }} />
+    </span>
+  );
+}
+
+/** Simple AirPods outline icon. */
+export function AirPodsIcon({ className = "h-6 w-6", strokeWidth = 1.6 }: { className?: string; strokeWidth?: number }) {
+  return (
+    <svg aria-hidden viewBox="0 0 32 32" className={className} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinejoin="round">
+      <rect x={5} y={4} width={9} height={10} rx={4.5} />
+      <rect x={8} y={12} width={4} height={14} rx={2} />
+      <rect x={18} y={4} width={9} height={10} rx={4.5} />
+      <rect x={20} y={12} width={4} height={14} rx={2} />
+    </svg>
+  );
+}
+
+/** Logo: a pointer ring plus the name. */
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
-    <span className={`serif inline-flex items-center gap-2 text-[1.6rem] leading-none ${className}`}>
-      <span aria-hidden className="mt-1 inline-block h-2.5 w-2.5 rounded-full bg-accent" />
+    <span className={`inline-flex items-center gap-2.5 font-[family-name:var(--font-display)] text-[1.4rem] font-bold tracking-[-0.03em] ${className}`}>
+      <span aria-hidden className="relative block h-5 w-5 rounded-full border-2 border-sky bg-sky/25">
+        <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky" />
+      </span>
       HeadsUp
     </span>
   );

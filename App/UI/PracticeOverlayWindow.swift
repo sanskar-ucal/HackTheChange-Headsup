@@ -30,7 +30,6 @@ final class PracticeOverlayController {
 
     private func makeWindow() -> NSWindow {
         let window = NSWindow(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: false)
-        // Below the pointer overlay (also .screenSaver, ordered later) but above apps.
         window.level = .screenSaver
         window.isOpaque = false
         window.backgroundColor = .clear
@@ -43,6 +42,7 @@ final class PracticeOverlayController {
     }
 }
 
+/// Practice targets and the countdown shown after calibration.
 struct PracticeOverlayView: View {
     @ObservedObject var coordinator: AppCoordinator
 

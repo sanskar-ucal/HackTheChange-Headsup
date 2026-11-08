@@ -36,7 +36,6 @@ final class OneEuroFilterTests: XCTestCase {
 
     func testFollowsFastMovementWithLowLag() {
         var filter = makeFilter()
-        // 60 °/s ramp: after 1 s the output should be close to the input.
         var output = 0.0
         for i in 0...25 { output = filter.filter(60 * Double(i) / 25, at: Double(i) / 25) }
         XCTAssertGreaterThan(output, 45)
@@ -61,11 +60,9 @@ final class OneEuroFilterTests: XCTestCase {
         var filter = PoseFilter(minCutoff: 1, beta: 0.01, dCutoff: 1)
         let start = AngleMath.radians(178)
         var output = HeadPose(timestamp: 0, yaw: 0, pitch: 0, roll: 0)
-        // Turn steadily from 178° through ±180° to -176°.
         for i in 0..<10 {
             let yaw = AngleMath.wrap(start + AngleMath.radians(Double(i)))
             output = filter.filter(HeadPose(timestamp: Double(i) / 25, yaw: yaw, pitch: 0, roll: 0))
-            // The output must stay near the seam, never swing through 0°.
             XCTAssertGreaterThan(abs(output.yaw), AngleMath.radians(170), "sample \(i)")
         }
         XCTAssertLessThan(abs(AngleMath.wrap(output.yaw - AngleMath.radians(-175))), AngleMath.radians(4))

@@ -4,70 +4,67 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import type { PointerEvent } from "react";
 import { hero } from "@/content/site";
 import { usePrefersReducedMotion } from "@/lib/hooks";
-import { DOWNLOAD_URL, GITHUB_URL } from "@/site.config";
 import { ChessDemo } from "./hero/ChessDemo";
 import { Laptop } from "./Laptop";
-import { ButtonLink, CodeIcon, DownloadIcon } from "./ui";
+import { Eyebrow, GitHubButton } from "./ui";
 
+/** Navy opener: headline left, pitch right, and a large laptop playing chess below. */
 export function Hero() {
   const reduced = usePrefersReducedMotion();
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
-  const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [-7, 7]), { stiffness: 80, damping: 18 });
-  const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [5, -5]), { stiffness: 80, damping: 18 });
+  const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [-4, 4]), { stiffness: 80, damping: 18 });
+  const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [3, -3]), { stiffness: 80, damping: 18 });
 
+  // Subtle tilt toward the mouse; skipped for touch and reduced motion.
   const onMove = (e: PointerEvent<HTMLElement>) => {
     if (reduced || e.pointerType !== "mouse") return;
     const r = e.currentTarget.getBoundingClientRect();
     mx.set((e.clientX - r.left) / r.width - 0.5);
     my.set((e.clientY - r.top) / r.height - 0.5);
   };
-  const onLeave = () => {
-    mx.set(0);
-    my.set(0);
-  };
 
   return (
     <section
       id="top"
       aria-labelledby="hero-title"
-      className="relative overflow-hidden"
+      className="relative overflow-hidden bg-navy"
       onPointerMove={onMove}
-      onPointerLeave={onLeave}
+      onPointerLeave={() => {
+        mx.set(0);
+        my.set(0);
+      }}
     >
-      <div className="mx-auto grid max-w-6xl items-center gap-14 px-5 pb-20 pt-14 sm:px-8 sm:pt-20 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-10 lg:pb-28 lg:pt-24">
-        <div className="hero-in">
-          <h1 id="hero-title" className="serif text-[3.6rem] leading-[0.95] sm:text-[5.2rem] lg:text-[5.6rem]">
-            {hero.headlineStart} <span className="em">{hero.headlineEmphasis}</span>
-          </h1>
-          <p className="mt-7 max-w-[34rem] text-lg leading-relaxed text-ink-soft sm:text-xl">{hero.subline}</p>
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <ButtonLink href={DOWNLOAD_URL}>
-              <DownloadIcon />
-              {hero.primaryCta}
-            </ButtonLink>
-            <ButtonLink href={GITHUB_URL} variant="secondary" external>
-              <CodeIcon />
-              {hero.secondaryCta}
-            </ButtonLink>
+      <div className="mx-auto max-w-7xl px-5 pt-14 sm:px-8 sm:pt-20 lg:pt-24">
+        <div className="grid items-end gap-10 lg:grid-cols-[1.35fr_1fr] lg:gap-16">
+          <div className="rise">
+            <Eyebrow>{hero.eyebrow}</Eyebrow>
+            <h1 id="hero-title" className="display text-[clamp(3.4rem,10vw,8.25rem)]">
+              {hero.headline}
+            </h1>
           </div>
-          <p className="mt-6 text-sm text-ink-soft">
-            {hero.smallPrint.map((s, i) => (
-              <span key={s}>
-                {i > 0 && <span aria-hidden className="mx-2 text-muted">·</span>}
-                {s}
-              </span>
-            ))}
-          </p>
+          <div className="rise [animation-delay:120ms] lg:pb-3">
+            <p className="max-w-md text-lg leading-relaxed text-white/80 sm:text-xl">{hero.subline}</p>
+            <GitHubButton label={hero.cta} className="mt-8" />
+          </div>
         </div>
 
-        <div className="hero-in [animation-delay:150ms]" style={{ perspective: 1400 }}>
-          <motion.div style={reduced ? undefined : { rotateX, rotateY, transformStyle: "preserve-3d" }}>
-            <Laptop>
+        <div className="rise mt-14 [animation-delay:220ms] sm:mt-20" style={{ perspective: 1600 }}>
+          <motion.div style={reduced ? undefined : { rotateX, rotateY }}>
+            <Laptop className="max-w-6xl">
               <ChessDemo />
             </Laptop>
           </motion.div>
         </div>
+
+        <ul className="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-10 gap-y-3 py-12 text-[0.95rem] text-white/75 sm:justify-between">
+          {hero.facts.map((f) => (
+            <li key={f} className="flex items-center gap-3">
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-sky" />
+              {f}
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

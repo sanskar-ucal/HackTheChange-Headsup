@@ -62,8 +62,7 @@ extension AppCoordinator {
 
     // MARK: Practice
 
-    /// Pointer moves normally; nods hit practice targets instead of clicking. When the
-    /// session ends it suggests a sensitivity: nod accepts, shake keeps the current one.
+    /// Pointer moves normally; nods hit practice targets instead of clicking.
     func handlePractice(raw: HeadPose, filtered: HeadPose) {
         guard var session = practice, let output = engine?.process(raw: raw, filtered: filtered) else { return }
         if !applyGestureFreeze(output) { acceptTarget(output.target) }

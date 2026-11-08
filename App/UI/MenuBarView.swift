@@ -100,6 +100,7 @@ struct MenuBarView: View {
     }
 }
 
+/// A checkmark or cross next to one requirement.
 struct StatusRow: View {
     let title: String
     let ok: Bool
@@ -123,6 +124,8 @@ extension HeadGesture {
         case .shake: return "Shake (Escape)"
         case .tiltHoldLeft: return "Tilt left (pause)"
         case .tiltHoldRight: return "Tilt right (recenter)"
+        case .doubleBlink: return "Double blink (click)"
+        case .tripleBlink: return "Triple blink (Escape)"
         }
     }
 }

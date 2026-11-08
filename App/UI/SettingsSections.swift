@@ -1,6 +1,7 @@
 import HeadsUpKit
 import SwiftUI
 
+/// Pointer style, color, size, opacity and outline.
 struct PointerSettingsSection: View {
     @Binding var settings: HeadsUpSettings
 
@@ -61,6 +62,7 @@ struct PointerSettingsSection: View {
     }
 }
 
+/// When voice input starts, which microphone it uses, and its timeouts.
 struct VoiceSettingsSection: View {
     @Binding var settings: HeadsUpSettings
 
@@ -78,6 +80,7 @@ struct VoiceSettingsSection: View {
     }
 }
 
+/// Cue volume, mute and spoken prompts.
 struct SoundSettingsSection: View {
     @Binding var settings: HeadsUpSettings
 
@@ -90,6 +93,7 @@ struct SoundSettingsSection: View {
     }
 }
 
+/// Filter and spring tuning, axis inversion, live readout and motion recording.
 struct AdvancedSettingsSection: View {
     @Binding var settings: HeadsUpSettings
     let telemetry: LiveTelemetry
@@ -111,6 +115,7 @@ struct AdvancedSettingsSection: View {
     }
 }
 
+/// Start/stop motion recording and reveal the saved CSV.
 struct RecorderControls: View {
     @ObservedObject var recorder: MotionRecorder
 

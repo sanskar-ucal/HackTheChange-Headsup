@@ -9,6 +9,8 @@ extension AppCoordinator {
         recorder.record(sensorPose)
         meter.recordSample()
         if !isHeadphonesConnected { handleConnection(.connected) }
+        let rate = sensorPose.rotationRate
+        headRateDegPerSec = AngleMath.degrees((rate.pitch * rate.pitch + rate.yaw * rate.yaw + rate.roll * rate.roll).squareRoot())
 
         let raw = sensorPose.adjusted(
             invertYaw: settings.invertYaw, invertPitch: settings.invertPitch, invertRoll: settings.invertRoll)
@@ -20,7 +22,7 @@ extension AppCoordinator {
         case .needsPermissions, .waitingForHeadphones:
             break
         case .calibrating:
-            handleCalibration(raw)  // raw pose only: no filter, sensitivity or spring
+            handleCalibration(raw)
         case .awaitingRecenter:
             handleTilt(raw)
             if state == .awaitingRecenter { handleAutoRecenter(filtered) }
@@ -80,8 +82,7 @@ extension AppCoordinator {
 
     // MARK: Recentering
 
-    /// Makes the current pose neutral (keeping the calibrated ranges) and glides the pointer
-    /// to the center of the screen.
+    /// Makes the current pose neutral.
     public func recenter() {
         guard state == .tracking || state == .awaitingRecenter,
               let pose = lastFilteredPose, let current = calibration else { return }
@@ -132,9 +133,7 @@ extension AppCoordinator {
         }
     }
 
-    /// The moment a gesture starts, freeze the real cursor exactly where it is (the spring
-    /// stops and no moves are posted). A rejected candidate releases with a short glide.
-    /// Returns true if the freeze was released on this sample.
+    /// The moment a gesture starts, freeze the real cursor exactly where it is.
     @discardableResult
     func applyGestureFreeze(_ output: TrackingEngine.Output) -> Bool {
         if let decision = output.decision { logGesture(decision) }
@@ -144,7 +143,7 @@ extension AppCoordinator {
             frozenPoint = here
             pointerFrozen = true
             freezeUntil = nil
-        } else if !output.isFrozen, pointerFrozen, freezeUntil == nil {
+        } else if !output.isFrozen, pointerFrozen, freezeUntil == nil, !blinkHold {
             releasePointer()
             return true
         }
@@ -152,8 +151,6 @@ extension AppCoordinator {
     }
 
     /// Ends a freeze by gliding (no jump) from the frozen spot to the head-pointed position.
-    /// The smoothing filter still carries the nod's own up/down movement, so it is re-seeded
-    /// from the next raw pose, and the glide goes to that fresh target, not a stale one.
     func releasePointer() {
         pointerFrozen = false
         freezeUntil = nil
@@ -181,12 +178,13 @@ extension AppCoordinator {
         }
     }
 
-    private func perform(_ gesture: HeadGesture, at point: CGPoint) {
+    func perform(_ gesture: HeadGesture, at point: CGPoint) {
+        if gesture == .nod || gesture == .shake,
+           !settings.clickInput.nodShakeActive(blinkEnabled: settings.blinkEnabled) { return }
         lastGesture = gesture
         switch dispatcher.action(for: gesture) {
         case .click:
-            // Click exactly at the frozen spot, then keep the cursor still like a mouse
-            // ("Hold after click"); `renderFrame` releases it with a glide afterwards.
+            // Click exactly at the frozen spot, then keep the cursor still like a mouse ("Hold after click").
             postAction { dispatcher.dispatch(gesture, at: point) }
             animator.place(at: point)
             lastPostedPoint = point

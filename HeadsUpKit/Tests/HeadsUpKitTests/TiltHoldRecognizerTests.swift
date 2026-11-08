@@ -47,7 +47,6 @@ final class TiltHoldRecognizerTests: XCTestCase {
     func testMeasuresRelativeToRollReference() {
         var recognizer = makeRecognizer()
         recognizer.rollReference = AngleMath.radians(-10)
-        // Absolute -25° is only -15° from a neutral of -10°: not a tilt.
         XCTAssertEqual(recognizer.run(S.trace(duration: 3, roll: [S.plateau(-25, from: 0.2, to: 2.5)])), [])
     }
 }

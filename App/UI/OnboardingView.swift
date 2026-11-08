@@ -2,19 +2,18 @@ import HeadsUpKit
 import SwiftUI
 
 /// One-time setup checklist, meant to be completed by a caregiver with mouse and keyboard.
-/// Everything after setup is hands-free.
 struct OnboardingView: View {
     @ObservedObject var coordinator: AppCoordinator
     let permissions: PermissionsProviding
 
-    /// Accessibility doesn't notify on change, so poll while this view is visible.
     private let poll = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Set up HeadsUp").font(.title2.bold())
-            Text("HeadsUp moves the pointer with head movement from AirPods. "
-                 + "Complete these steps once; after that it is fully hands-free.")
+            Text("HeadsUp is a hands-free Mac mouse for people with tetraplegia: head movement from AirPods "
+                 + "moves the pointer, and a nod clicks. A caregiver can complete these steps once with a mouse "
+                 + "and keyboard; after that, everyday use is hands-free.")
                 .foregroundStyle(.secondary)
 
             step(
@@ -58,13 +57,26 @@ struct OnboardingView: View {
                 }
             }
 
+            step(
+                number: 5, title: "Blink controls (optional, beta)",
+                detail: "Lets the camera notice double blinks (click) and triple blinks (Escape). "
+                    + "Turn it on in Settings → Blink controls. Video stays on this Mac and is never stored.",
+                done: coordinator.permissionStatus.camera == .authorized
+            ) {
+                if coordinator.permissionStatus.camera == .notDetermined {
+                    Button("Allow Camera") { permissions.requestCamera() }
+                } else {
+                    Button("Camera Settings") { permissions.openCameraSettings() }
+                }
+            }
+
             Divider()
             Text(nextStepText)
                 .font(.callout)
             Spacer()
         }
         .padding(24)
-        .frame(minWidth: 460, minHeight: 600)
+        .frame(minWidth: 460, minHeight: 680)
         .onReceive(poll) { _ in coordinator.refreshPermissions() }
     }
 

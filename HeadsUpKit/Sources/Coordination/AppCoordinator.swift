@@ -9,12 +9,6 @@ public struct HoldProgress: Sendable, Equatable {
 }
 
 /// Owns the app state machine and wires motion → processing → output.
-///
-/// States: needsPermissions → waitingForHeadphones → calibrating → practicing → tracking,
-/// with tracking ⇄ paused / scrollMode / listening → voiceReview. A launch with a saved
-/// calibration, or a reconnect, goes through awaitingRecenter. Sensor samples update the
-/// pointer *target*; `renderFrame(at:)` moves the real pointer at display rate. Synthetic
-/// events go through `postMotion` / `postAction`, which check `AppState`.
 @MainActor
 public final class AppCoordinator: ObservableObject {
     @Published public internal(set) var state: AppState = .needsPermissions
@@ -28,8 +22,10 @@ public final class AppCoordinator: ObservableObject {
     @Published public internal(set) var pointerContext: PointerContext = .idle
     @Published public internal(set) var transcript = ""
     @Published public internal(set) var practice: PracticeSession?
+    @Published public internal(set) var blinkSequenceCount = 0
 
     public let telemetry: LiveTelemetry
+    public let blinkTelemetry: BlinkTelemetry
     public let recorder: MotionRecorder
     public internal(set) var settings: HeadsUpSettings
     public internal(set) var calibration: Calibration?
@@ -46,25 +42,19 @@ public final class AppCoordinator: ObservableObject {
     var meter = SampleRateMeter()
     var lastTelemetryTime: TimeInterval = -.infinity
 
-    // Rendering
     var animator: PointerAnimator
     var pointerTarget: CGPoint?
     var lastPostedPoint: CGPoint?
     var lastFrameTime: TimeInterval?
-    /// True from a gesture onset until it is rejected, or until `freezeUntil` after a nod
-    /// click: nothing moves the pointer.
     var pointerFrozen = false
     var frozenPoint: CGPoint?
-    /// Frame-clock time when the hold after a click ends.
     var freezeUntil: TimeInterval?
-    /// The next head target is reached with the release glide.
     var releaseGlidePending = false
     var glideOnNextTarget = false
     var pressingUntil: TimeInterval?
     var targetUpdatedAt: TimeInterval?
     var latestLatencyMs: Double?
 
-    // Modes
     var scrollVelocity = ScrollVelocity.zero
     var scrollAnchor: CGPoint?
     var scrollMode: ScrollModeRecognizer?
@@ -73,6 +63,14 @@ public final class AppCoordinator: ObservableObject {
     var voiceInsertion: InsertionRecord?
     var voiceReviewStart: TimeInterval?
     var lastClickTime: TimeInterval = -.infinity
+
+    var blinkDetector: BlinkDetector
+    var blinkSequence: BlinkSequenceRecognizer
+    var blinkQuality: BlinkQualityMonitor
+    var blinkAnchor: CGPoint?
+    var blinkHold = false
+    var cameraRetryPending = false
+    var headRateDegPerSec = 0.0
 
     static let log = Logger(subsystem: "com.hackthechange.HeadsUp", category: "coordinator")
     static let signposter = OSSignposter(subsystem: "com.hackthechange.HeadsUp", category: .pointsOfInterest)
@@ -91,6 +89,7 @@ public final class AppCoordinator: ObservableObject {
         self.settings = settings
         self.recorder = recorder ?? MotionRecorder()
         telemetry = LiveTelemetry()
+        blinkTelemetry = BlinkTelemetry()
         dispatcher = ActionDispatcher(cursor: dependencies.cursor, feedback: dependencies.feedback)
         permissionStatus = dependencies.permissions.currentStatus()
         calibration = savedCalibration
@@ -101,6 +100,9 @@ public final class AppCoordinator: ObservableObject {
             toleranceDegrees: settings.autoRecenterToleranceDegrees, duration: settings.autoRecenterStillDuration)
         animator = PointerAnimator(stiffness: settings.pointerSpringStiffness)
         modeRecognizer = DoubleNodRecognizer(settings: settings)
+        blinkDetector = BlinkDetector(config: BlinkConfig(settings: settings))
+        blinkSequence = BlinkSequenceRecognizer(config: BlinkSequenceConfig(settings: settings))
+        blinkQuality = BlinkQualityMonitor(settings: settings)
         dependencies.feedback.configure(volume: settings.feedbackVolume, muted: settings.feedbackMuted)
         dependencies.announcer.isEnabled = settings.speechEnabled
     }
@@ -119,7 +121,9 @@ public final class AppCoordinator: ObservableObject {
         })
         deps.frameClock.start { [weak self] timestamp in self?.renderFrame(at: timestamp) }
         deps.focusReader.onFocusChange = { [weak self] in self?.handleFocusChange() }
-        // Starting motion right away also triggers the system motion permission prompt.
+        deps.faceSource?.onFrame = { [weak self] in self?.handle(faceFrame: $0) }
+        deps.faceSource?.onFailure = { [weak self] in self?.handleCameraFailure($0) }
+        deps.faceSource?.onRunning = { [weak self] in self?.blinkTelemetry.camera = .running }
         source.start()
         startDiagnostics()
         refreshPermissions()
@@ -133,6 +137,7 @@ public final class AppCoordinator: ObservableObject {
         deps.frameClock.stop()
         deps.speech.cancel()
         deps.motionSource.stop()
+        deps.faceSource?.stop()
         deps.keepAlive.stop()
         isStarted = false
     }
@@ -151,7 +156,6 @@ public final class AppCoordinator: ObservableObject {
         if state == .needsPermissions { proceed() }
     }
 
-    /// Accessibility status doesn't notify on change, so poll while it's missing.
     private func startPermissionPolling() {
         guard permissionTimer == nil, settings.permissionPollInterval > 0 else { return }
         permissionTimer = Timer.scheduledTimer(withTimeInterval: settings.permissionPollInterval, repeats: true) {
@@ -169,8 +173,6 @@ public final class AppCoordinator: ObservableObject {
         }
     }
 
-    /// Called once per diagnostics interval on the wall clock, so a stall in background
-    /// delivery shows up as 0 samples/s rather than a stale number.
     func reportSampleRate(interval: TimeInterval) {
         let rate = meter.takeRate(interval: interval)
         let active = deps.isAppActive()

@@ -2,9 +2,7 @@ import AppKit
 import ApplicationServices
 import Foundation
 
-/// `FocusedElementReader` over the Accessibility API. Watches
-/// `kAXFocusedUIElementChangedNotification` on whichever app is frontmost, and enables
-/// Chromium/Electron accessibility so web search fields are visible.
+/// `FocusedElementReader` over the Accessibility API.
 @MainActor
 public final class AXFocusedElementReader: FocusedElementReader {
     public var onFocusChange: (@MainActor () -> Void)?

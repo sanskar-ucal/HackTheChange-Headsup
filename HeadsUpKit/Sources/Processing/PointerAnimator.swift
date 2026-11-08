@@ -1,9 +1,7 @@
 import CoreGraphics
 import Foundation
 
-/// Display-rate pointer motion: a critically damped spring chases the target, removing the
-/// stepping of 25–50 Hz sensor updates. Glides (eased tweens) replace the spring for
-/// releases after a nod, resume and recenter so nothing teleports.
+/// Display-rate pointer motion: a critically damped spring chases the target.
 public struct PointerAnimator: Sendable {
     public struct Step: Sendable, Equatable {
         public var position: CGPoint
@@ -11,8 +9,7 @@ public struct PointerAnimator: Sendable {
         public var finishedGlide: Int?
     }
 
-    /// ω² of the spring. Critically damped settle (2 %) takes ≈ 5.8 / √stiffness seconds
-    /// (≈ 39 ms at the default 22000).
+    /// ω² of the spring.
     public var stiffness: Double
     public private(set) var position: CGPoint?
     private var velocityX = 0.0

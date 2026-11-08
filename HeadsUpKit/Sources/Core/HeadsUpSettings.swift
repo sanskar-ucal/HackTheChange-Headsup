@@ -1,11 +1,9 @@
 import Foundation
 
-/// Every tunable number in HeadsUp. Angles are degrees, durations seconds and distances
-/// points here (human-friendly for the Settings UI); components convert internally.
+/// Every tunable number in HeadsUp.
 public struct HeadsUpSettings: Codable, Equatable, Sendable {
     // MARK: Pointing
-    /// 0.25…1.5. At 1.0 the calibrated corners reach the screen corners; lower values
-    /// need more head turn for the same pointer travel (calmer).
+    /// 0.25…1.5.
     public var sensitivity: Double = 0.6
     /// false = map to the main display only; true = map to the union of all displays.
     public var spanAllDisplays: Bool = false
@@ -46,10 +44,9 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     /// The rollback point is taken this long before the gesture onset.
     public var gestureOnsetLookback: Double = 0.1
     public var cursorHistoryDuration: Double = 0.6
-    /// Raw pitch-dominant head speed at which the cursor already stops following, so the
-    /// first samples of a nod (before the onset threshold) don't move it.
+    /// Raw pitch-dominant head speed at which the cursor already stops following, so the first samples of a nod.
     public var nodPreHoldRateDegPerSec: Double = 30
-    /// Double nod toggles in-place scroll mode. Off = single nods click with no delay.
+    /// Double nod toggles in-place scroll mode.
     public var doubleNodEnabled: Bool = false
     /// Both nods must start within this window.
     public var doubleNodWindow: Double = 0.9
@@ -84,7 +81,7 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     // MARK: Scrolling
     public var edgeScrollEnabled: Bool = true
     public var horizontalEdgeScroll: Bool = false
-    /// On: looking up reveals content above. Off: inverted.
+    /// On: looking up reveals content above.
     public var naturalScrolling: Bool = true
     /// Multiplier on scroll speed (slider).
     public var scrollSpeed: Double = 1.0
@@ -121,6 +118,24 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
 
     /// Accessibility request timeout for voice input's focused-field checks.
     public var axMessagingTimeout: Double = 0.05
+
+    // MARK: Blink controls
+    public var blinkEnabled: Bool = false
+    public var clickInput: ClickInput = .both
+    /// 0…1; higher counts shallower eye closures as blinks.
+    public var blinkSensitivity: Double = 0.5
+    public var blinkMaxGap: Double = 0.45
+    public var blinkMinDuration: Double = 0.05
+    public var blinkMaxDuration: Double = 0.4
+    public var blinkCooldown: Double = 0.7
+    public var blinkRequireBothEyes: Bool = true
+    public var blinkBaselineWindow: Double = 5
+    /// Blinks are ignored while the AirPods report a faster head turn than this.
+    public var blinkMaxHeadRateDegPerSec: Double = 40
+    public var blinkMinConfidence: Double = 0.5
+    public var blinkMinBrightness: Double = 0.12
+    public var blinkMaxFaceYawDegrees: Double = 30
+    public var blinkMinFaceSize: Double = 0.12
 
     // MARK: Sound
     public var feedbackVolume: Double = 0.6

@@ -15,6 +15,25 @@ public enum VoiceInputTrigger: String, Codable, Sendable, CaseIterable {
     }
 }
 
+/// Which gestures click and press Escape.
+public enum ClickInput: String, Codable, Sendable, CaseIterable {
+    case nodAndShake
+    case blinks
+    case both
+
+    public var displayName: String {
+        switch self {
+        case .nodAndShake: return "Nod & shake"
+        case .blinks: return "Blinks"
+        case .both: return "Both"
+        }
+    }
+
+    public func nodShakeActive(blinkEnabled: Bool) -> Bool { !blinkEnabled || self != .blinks }
+
+    public func blinksActive(blinkEnabled: Bool) -> Bool { blinkEnabled && self != .nodAndShake }
+}
+
 /// The pointer overlay's visual style.
 public enum PointerStyleKind: String, Codable, Sendable, CaseIterable {
     case hand
@@ -33,7 +52,6 @@ public enum PointerStyleKind: String, Codable, Sendable, CaseIterable {
         }
     }
 
-    /// Default color when the user hasn't picked one.
     public var defaultColor: RGBAColor {
         switch self {
         case .hand: return .white
@@ -43,6 +61,7 @@ public enum PointerStyleKind: String, Codable, Sendable, CaseIterable {
     }
 }
 
+/// Pointer glyph sizes offered in Settings.
 public enum PointerSize: String, Codable, Sendable, CaseIterable {
     case small, medium, large, extraLarge
 
@@ -55,7 +74,6 @@ public enum PointerSize: String, Codable, Sendable, CaseIterable {
         }
     }
 
-    /// Edge length of the pointer glyph in points.
     public var points: Double {
         switch self {
         case .small: return 32
@@ -66,7 +84,7 @@ public enum PointerSize: String, Codable, Sendable, CaseIterable {
     }
 }
 
-/// A color that can live in `HeadsUpSettings` (Codable, no AppKit dependency). Components 0…1.
+/// A color that can live in `HeadsUpSettings` (Codable, no AppKit dependency).
 public struct RGBAColor: Codable, Sendable, Equatable, Hashable {
     public var red: Double
     public var green: Double
@@ -88,6 +106,5 @@ public struct RGBAColor: Codable, Sendable, Equatable, Hashable {
     public static let red = RGBAColor(red: 1, green: 0.3, blue: 0.3)
     public static let purple = RGBAColor(red: 0.7, green: 0.4, blue: 1)
 
-    /// Swatches offered in Settings.
     public static let presets: [RGBAColor] = [.white, .black, .green, .yellow, .blue, .red, .purple]
 }

@@ -1,10 +1,4 @@
-/**
- * Pure timeline for the hero chess demo. Everything on screen is a function of time `t`,
- * which makes the loop deterministic, pausable and trivially resettable.
- *
- * Story: 1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6?? 4. Qxf7#
- * White's moves are made by the HeadsUp cursor (glide → nod → glide → nod).
- */
+// Chess demo timeline (Scholar's Mate): every frame is a pure function of time, so the loop is easy to pause.
 import { bump, clamp, easeInOut, easeOut, lerp } from "@/lib/hooks";
 
 export type Pt = { x: number; y: number };
@@ -54,7 +48,7 @@ type MoveTiming = { lift?: number; slideStart: number; slideEnd: number };
 const D = {
   lead: 0.45,
   nod: 0.5,
-  register: 0.12, // nod recognised this long after the cursor stops
+  register: 0.12,
   slide: 0.3,
   blackPause: 0.32,
   blackSlide: 0.38,
@@ -64,6 +58,14 @@ const D = {
 };
 
 const glideDur = (a: Pt, b: Pt) => clamp(0.42 + Math.hypot(b.x - a.x, b.y - a.y) * 0.0016, 0.5, 0.9);
+
+// HeadsUp doesn't snap to targets, so the cursor aims slightly off each square's center.
+const AIM_OFFSETS: [number, number][] = [[4, -5], [-5, 3], [3, 6], [-4, -3], [6, 2], [-2, 5], [5, -2], [-6, -4]];
+const aim = (sq: string, k: number): Pt => {
+  const c = center(sq);
+  const [dx, dy] = AIM_OFFSETS[k % AIM_OFFSETS.length];
+  return { x: c.x + dx, y: c.y + dy };
+};
 
 export const REST: Pt = { x: 382, y: 214 };
 
@@ -78,8 +80,8 @@ function build() {
 
   for (const m of MOVES) {
     if (m.color === "w") {
-      const from = center(m.from);
-      const to = center(m.to);
+      const from = aim(m.from, seed);
+      const to = aim(m.to, seed + 1);
       let d = glideDur(pos, from);
       segs.push({ k: "glide", s: t, e: t + d, from: pos, to: from, bend: seed++ % 2 ? 1 : -1, phase: seed * 1.7 });
       t += d;
@@ -116,7 +118,7 @@ export const DURATION = SCRIPT.duration;
 export type Frame = {
   opacity: number;
   cursor: Pt;
-  pressed: number; // 0..1, cursor fill darkening during a nod
+  pressed: number;
   ripple: { at: Pt; p: number } | null;
   head: { yaw: number; pitch: number; label: "look" | "nod" };
   pieces: { piece: Piece; at: Pt; lift: number; opacity: number }[];
@@ -124,8 +126,8 @@ export type Frame = {
   hint: string | null;
   lastMove: [string, string] | null;
   movesDone: number;
-  mate: number; // 0..1 highlight of the black king
-  toast: number; // 0..1
+  mate: number;
+  toast: number;
   turn: Color;
 };
 
@@ -157,7 +159,6 @@ export function frameAt(t: number): Frame {
   const { timings, mateAt, fadeStart } = SCRIPT;
   const c = cursorAt(t);
 
-  // Board state.
   const map = new Map<string, Piece>(INITIAL.map((p) => [p.id, { ...p }]));
   const bySq = () => {
     const m = new Map<string, Piece>();
@@ -205,7 +206,6 @@ export function frameAt(t: number): Frame {
     const x = extra.get(piece.id);
     return { piece, at: x?.at ?? center(piece.sq), lift: x?.lift ?? 0, opacity: x?.opacity ?? 1 };
   });
-  // Moving / lifted pieces draw on top.
   pieces.sort((a, b) => a.lift - b.lift + (extra.get(a.piece.id)?.at ? 1 : 0) - (extra.get(b.piece.id)?.at ? 1 : 0));
 
   let ripple: Frame["ripple"] = null;
@@ -233,7 +233,7 @@ export function frameAt(t: number): Frame {
   };
 }
 
-/** The reduced-motion still: checkmate, cursor resting on the queen. */
+/** Reduced-motion still: checkmate with the cursor on the queen. */
 export const MATE_FRAME: Frame = (() => {
   const f = frameAt(SCRIPT.fadeStart - 0.01);
   return { ...f, opacity: 1, ripple: null, pressed: 0, head: { yaw: 0, pitch: 0, label: "nod" } };

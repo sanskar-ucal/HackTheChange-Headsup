@@ -8,10 +8,7 @@ public protocol BackgroundKeepAlive: AnyObject {
     func stop()
 }
 
-/// Mitigation for background delivery (platform fact 8):
-/// - holds a `ProcessInfo` activity so App Nap does not throttle the process, and
-/// - runs a silent `AVAudioEngine` output so the AirPods stay the active audio route
-///   and the process counts as playing audio.
+/// Mitigation for background delivery (platform fact 8).
 @MainActor
 public final class SilentAudioKeepAlive: BackgroundKeepAlive {
     private let engine = AVAudioEngine()
@@ -26,7 +23,6 @@ public final class SilentAudioKeepAlive: BackgroundKeepAlive {
         engine.connect(silence, to: engine.mainMixerNode, format: format)
     }
 
-    /// Built outside the main actor: the render block runs on the real-time audio thread.
     private nonisolated static func makeSilenceNode() -> AVAudioSourceNode {
         AVAudioSourceNode { _, _, _, audioBufferList -> OSStatus in
             for buffer in UnsafeMutableAudioBufferListPointer(audioBufferList) {
@@ -70,13 +66,9 @@ enum AudioEngineSupport {
     static func startIfNeeded(_ engine: AVAudioEngine) {
         guard !engine.isRunning else { return }
         engine.prepare()
-        do { try engine.start() } catch { /* No output device right now; retried on route change. */ }
+        do { try engine.start() } catch { }
     }
 
-    /// The engine stops when the output device changes (AirPods connect/disconnect).
-    /// Calls `handler` on the main actor for each change so the owner can restart its
-    /// engine. The engine is only the notification filter; it is not captured, so no
-    /// non-Sendable state crosses into the observer block.
     static func observeConfigurationChanges(
         of engine: AVAudioEngine,
         handler: @escaping @MainActor @Sendable () -> Void
@@ -84,7 +76,6 @@ enum AudioEngineSupport {
         NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
         ) { _ in
-            // queue: .main delivers on the main thread.
             MainActor.assumeIsolated { handler() }
         }
     }

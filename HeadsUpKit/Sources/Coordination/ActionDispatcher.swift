@@ -11,9 +11,7 @@ public enum HeadsUpAction: String, Sendable, Equatable, Codable {
     case none
 }
 
-/// Maps gestures to actions and performs the input actions (click, escape) together with
-/// their feedback cue. App-control actions (pause, recenter, scroll mode) are returned to
-/// the coordinator, which owns the state machine.
+/// Maps gestures to actions and performs the input actions (click, escape) together with their feedback cue.
 @MainActor
 public final class ActionDispatcher {
     public var mapping: [HeadGesture: HeadsUpAction]
@@ -27,6 +25,8 @@ public final class ActionDispatcher {
         .shake: .escape,
         .tiltHoldLeft: .togglePause,
         .tiltHoldRight: .recenter,
+        .doubleBlink: .click,
+        .tripleBlink: .escape,
     ]
 
     public init(cursor: CursorController, feedback: FeedbackService,
@@ -40,8 +40,6 @@ public final class ActionDispatcher {
         mapping[gesture] ?? .none
     }
 
-    /// Performs input actions at `point` and returns the action so the caller can handle
-    /// app-control actions. The caller is responsible for only dispatching while tracking.
     @discardableResult
     public func dispatch(_ gesture: HeadGesture, at point: CGPoint) -> HeadsUpAction {
         let action = action(for: gesture)

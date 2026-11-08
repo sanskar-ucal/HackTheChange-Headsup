@@ -15,7 +15,7 @@ extension AppCoordinator {
         case .disconnected:
             guard isHeadphonesConnected else { return }
             isHeadphonesConnected = false
-            needsRecenter = true  // the yaw reference resets on reconnect
+            needsRecenter = true
             poseFilter.reset()
             switch state {
             case .tracking, .awaitingRecenter, .calibrating, .practicing, .scrollMode, .listening, .voiceReview:
@@ -62,7 +62,6 @@ extension AppCoordinator {
         if state == .tracking { announce("Resumed.") }
     }
 
-    /// Moves to whichever state the current conditions allow.
     func proceed() {
         if !permissionStatus.isReady {
             enter(.needsPermissions)
@@ -82,6 +81,7 @@ extension AppCoordinator {
     func enter(_ newState: AppState) {
         holdProgress = nil
         pointerFrozen = false
+        blinkHold = false
         frozenPoint = nil
         freezeUntil = nil
         releaseGlidePending = false
@@ -92,11 +92,10 @@ extension AppCoordinator {
         case .needsPermissions, .waitingForHeadphones: deps.keepAlive.stop()
         default: deps.keepAlive.start()
         }
+        updateCamera()
         updatePointerContext()
     }
 
-    /// Builds a fresh tracking pipeline starting from the real cursor position.
-    /// - Parameter glide: ease to the head position over `glideDuration` once it is known.
     func enterTracking(cursorAt point: CGPoint, glide: Bool, as newState: AppState = .tracking) {
         guard let calibration else { return }
         var engine = TrackingEngine(calibration: calibration, geometry: deps.screenGeometry(), settings: settings)
@@ -109,19 +108,16 @@ extension AppCoordinator {
         enter(newState)
     }
 
-    /// Returns to plain tracking after scroll mode or voice input, keeping the pointer where it is.
     func returnToTracking() {
         engine?.resetGestures()
         enter(.tracking)
     }
 
-    /// Gate for pointer moves.
     func postMotion(_ body: () -> Void) {
         guard state.allowsPointerMotion else { return }
         body()
     }
 
-    /// Gate for clicks, keys, scrolling and text input.
     func postAction(_ body: () -> Void) {
         guard state.allowsActions else { return }
         body()

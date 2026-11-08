@@ -5,5 +5,8 @@
 	<!-- Posting CGEvents into other apps requires Accessibility, which the sandbox blocks. -->
 	<key>com.apple.security.app-sandbox</key>
 	<false/>
+	<!-- Needed for blink controls if the hardened runtime is turned on. -->
+	<key>com.apple.security.device.camera</key>
+	<true/>
 </dict>
 </plist>

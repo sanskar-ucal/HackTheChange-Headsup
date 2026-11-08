@@ -1,8 +1,7 @@
 import CoreGraphics
 import Foundation
 
-/// Bounded buffer of recent cursor positions, used to roll the cursor back to where it was
-/// when a nod or shake began.
+/// Bounded buffer of recent cursor positions, used to roll the cursor back to where it was when a nod or shake began.
 public struct CursorHistory: Sendable {
     public struct Entry: Sendable, Equatable {
         public var time: TimeInterval
@@ -28,8 +27,7 @@ public struct CursorHistory: Sendable {
         entries.removeAll()
     }
 
-    /// The most recent position recorded at or before `time`; the oldest position if `time`
-    /// predates the buffer; nil if empty.
+    /// The most recent position recorded at or before `time`; the oldest position if `time` predates the buffer.
     public func point(at time: TimeInterval) -> CGPoint? {
         if let entry = entries.last(where: { $0.time <= time }) { return entry.point }
         return entries.first?.point

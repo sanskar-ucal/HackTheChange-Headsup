@@ -1,13 +1,9 @@
 import CoreGraphics
 import Foundation
 
-/// Display layout in the **global CoreGraphics space** (top-left origin, y grows down),
-/// the space used by `CGEvent` and `CGDisplayBounds`.
-///
-/// This is the only place that converts to and from AppKit's bottom-left space
-/// (`NSScreen.frame`, `NSWindow.frame`, `NSEvent.mouseLocation`).
+/// Display layout in the **global CoreGraphics space** (top-left origin, y grows down).
 public struct ScreenGeometry: Sendable, Equatable {
-    /// Display rectangles in global top-left coordinates. Never empty.
+    /// Display rectangles in global top-left coordinates.
     public let displays: [CGRect]
     /// The display with the menu bar (global origin 0,0).
     public let mainDisplay: CGRect
@@ -47,8 +43,7 @@ public struct ScreenGeometry: Sendable, Equatable {
                 y: rect.minY + normalized.y * rect.height)
     }
 
-    /// Moves `point` onto the nearest pixel of any display (the union of displays can have
-    /// holes, and `maxX`/`maxY` are exclusive).
+    /// Moves `point` onto the nearest pixel of any display, since the union of displays can have holes.
     public func clamp(_ point: CGPoint) -> CGPoint {
         var best = point
         var bestDistance = CGFloat.infinity

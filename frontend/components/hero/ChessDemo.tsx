@@ -2,20 +2,21 @@
 
 import { useInView } from "framer-motion";
 import { memo, useRef } from "react";
-import { HeadGlyph } from "@/components/HeadGlyph";
 import { useLoopClock, usePrefersReducedMotion } from "@/lib/hooks";
 import { BX, BY, DURATION, MATE_FRAME, MOVES, SQ, center, frameAt, type Color, type Frame, type PieceType } from "./chessScript";
 
-const INK = "#1D1C1A";
-const PAPER = "#F3EFE6";
-const SAGE = "#A9B79A";
-const GREEN = "#2E7D5B";
+const NAVY = "#0B1A30";
+const PALE = "#E6EFFB";
+const SKY = "#A8C6F0";
+const LINE = "#C9D8EE";
+const MUTED = "#46546A";
+const POINTER = "#33D959";
 
-/** Simple geometric pieces drawn in a 40 × 40 box. */
+/** Simple geometric chess pieces drawn in a 40 × 40 box. */
 function PieceShape({ type, color }: { type: PieceType; color: Color }) {
-  const fill = color === "w" ? "#FFFFFF" : INK;
-  const detail = color === "w" ? INK : PAPER;
-  const s = { fill, stroke: INK, strokeWidth: 1.4, strokeLinejoin: "round" as const };
+  const fill = color === "w" ? "#FFFFFF" : NAVY;
+  const detail = color === "w" ? NAVY : PALE;
+  const s = { fill, stroke: NAVY, strokeWidth: 1.4, strokeLinejoin: "round" as const };
   const base = <rect x={10.5} y={30.5} width={19} height={4} rx={1.6} {...s} />;
   switch (type) {
     case "P":
@@ -68,7 +69,7 @@ function PieceShape({ type, color }: { type: PieceType; color: Color }) {
         <g>
           <path d="M13.5 31 C13.5 25 14.5 19.5 15.6 17 H24.4 C25.5 19.5 26.5 25 26.5 31 Z" {...s} />
           <rect x={14} y={14} width={12} height={3.4} rx={1} {...s} />
-          <path d="M20 4.5 V12.5 M16.8 7.6 H23.2" stroke={INK} strokeWidth={4} strokeLinecap="round" />
+          <path d="M20 4.5 V12.5 M16.8 7.6 H23.2" stroke={NAVY} strokeWidth={4} strokeLinecap="round" />
           <path d="M20 4.5 V12.5 M16.8 7.6 H23.2" stroke={fill} strokeWidth={1.6} strokeLinecap="round" />
           {base}
         </g>
@@ -76,38 +77,29 @@ function PieceShape({ type, color }: { type: PieceType; color: Color }) {
   }
 }
 
+/** Static 8×8 board, memoized so only pieces and cursor re-render. */
 const Board = memo(function Board() {
   const squares = [];
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
-      squares.push(
-        <rect key={`${r}${c}`} x={BX + c * SQ} y={BY + r * SQ} width={SQ} height={SQ} fill={(r + c) % 2 ? SAGE : PAPER} />,
-      );
+      squares.push(<rect key={`${r}${c}`} x={BX + c * SQ} y={BY + r * SQ} width={SQ} height={SQ} fill={(r + c) % 2 ? SKY : PALE} />);
     }
   }
   return (
     <g>
-      <rect x={BX - 6} y={BY - 6} width={SQ * 8 + 12} height={SQ * 8 + 12} rx={6} fill="#FFFFFF" stroke="#DDD6C8" />
+      <rect x={BX - 6} y={BY - 6} width={SQ * 8 + 12} height={SQ * 8 + 12} rx={8} fill="#FFFFFF" stroke={LINE} />
       {squares}
-      {"abcdefgh".split("").map((f, i) => (
-        <text key={f} x={BX + i * SQ + SQ - 3.5} y={BY + 8 * SQ - 3.5} fontSize={7.5} textAnchor="end" fill={i % 2 ? "#5C6B52" : "#7A8670"}>
-          {f}
-        </text>
-      ))}
-      {[8, 7, 6, 5, 4, 3, 2, 1].map((n, i) => (
-        <text key={n} x={BX + 3} y={BY + i * SQ + 10} fontSize={7.5} fill={i % 2 ? "#7A8670" : "#5C6B52"}>
-          {n}
-        </text>
-      ))}
     </g>
   );
 });
 
-function SquareTint({ sq, fill, opacity = 1 }: { sq: string; fill: string; opacity?: number }) {
+/** Navy tint over one square (selection, last move). */
+function SquareTint({ sq, opacity }: { sq: string; opacity: number }) {
   const c = center(sq);
-  return <rect x={c.x - SQ / 2} y={c.y - SQ / 2} width={SQ} height={SQ} fill={fill} opacity={opacity} />;
+  return <rect x={c.x - SQ / 2} y={c.y - SQ / 2} width={SQ} height={SQ} fill={NAVY} opacity={opacity} />;
 }
 
+/** Side panel with the moves so far and whose turn it is. */
 function MoveList({ done, turn, mate }: { done: number; turn: Color; mate: boolean }) {
   const rows = [];
   for (let i = 0; i < MOVES.length; i += 2) {
@@ -115,53 +107,84 @@ function MoveList({ done, turn, mate }: { done: number; turn: Color; mate: boole
   }
   const x = 410;
   return (
-    <g fontSize={11} fill={INK}>
-      <rect x={x - 8} y={BY - 6} width={210} height={196} rx={8} fill="#FFFFFF" stroke="#DDD6C8" />
-      <text x={x + 6} y={BY + 16} fontSize={9.5} letterSpacing={1.2} fill="#5C5850">
+    <g fontSize={11} fill={NAVY}>
+      <rect x={x - 8} y={BY - 6} width={210} height={196} rx={10} fill="#FFFFFF" stroke={LINE} />
+      <text x={x + 6} y={BY + 16} fontSize={9.5} fontWeight={600} letterSpacing={1.2} fill={MUTED}>
         MOVES
       </text>
       {rows.map((r, i) => (
         <g key={r.n} transform={`translate(${x + 6} ${BY + 42 + i * 24})`}>
-          <text fill="#8A857B">{r.n}.</text>
-          <text x={26} fontWeight={600}>
-            {r.w}
-          </text>
+          <text fill={MUTED}>{r.n}.</text>
+          <text x={26} fontWeight={600}>{r.w}</text>
           <text x={92}>{r.b}</text>
         </g>
       ))}
-      <line x1={x + 6} x2={x + 188} y1={BY + 146} y2={BY + 146} stroke="#EAE4D8" />
-      <circle cx={x + 11} cy={BY + 167} r={4} fill={mate ? GREEN : turn === "w" ? "#FFFFFF" : INK} stroke={INK} strokeWidth={1.2} />
-      <text x={x + 22} y={BY + 171} fill="#5C5850">
-        {mate ? "White wins" : turn === "w" ? "White to move · HeadsUp" : "Black to move"}
+      <line x1={x + 6} x2={x + 188} y1={BY + 146} y2={BY + 146} stroke={PALE} />
+      <circle cx={x + 11} cy={BY + 167} r={4} fill={mate || turn === "b" ? NAVY : "#FFFFFF"} stroke={NAVY} strokeWidth={1.2} />
+      <text x={x + 22} y={BY + 171} fill={MUTED}>
+        {mate ? "White wins" : turn === "w" ? "White to move" : "Black to move"}
       </text>
     </g>
   );
 }
 
+/** Abstract input readout: AirPods outline, the current gesture and its direction. */
+function AirPodsPill({ head }: { head: Frame["head"] }) {
+  const nod = head.label === "nod";
+  const angle = Math.atan2(head.pitch, head.yaw) * (180 / Math.PI);
+  const moving = Math.hypot(head.yaw, head.pitch) > 0.15;
+  return (
+    <g transform="translate(402 290)">
+      <rect width={210} height={56} rx={28} fill={NAVY} />
+      <g transform="translate(16 12)" stroke={SKY} strokeWidth={1.6} fill="none" strokeLinejoin="round">
+        <rect x={0} y={0} width={10} height={11} rx={5} />
+        <rect x={3.5} y={9} width={4} height={14} rx={2} />
+        <rect x={14} y={0} width={10} height={11} rx={5} />
+        <rect x={16.5} y={9} width={4} height={14} rx={2} />
+      </g>
+      <text x={54} y={25} fontSize={10} fill={SKY} fontWeight={600} letterSpacing={0.8}>
+        AIRPODS
+      </text>
+      <text x={54} y={42} fontSize={13} fill="#FFFFFF" fontWeight={600}>
+        {nod ? "Nod → click" : moving ? "Looking" : "Holding still"}
+      </text>
+      <g transform="translate(182 28)">
+        <circle r={14} fill={nod ? POINTER : "#1B3152"} />
+        {nod ? (
+          <path d="M-5 0 L-1 4 L6 -4" stroke={NAVY} strokeWidth={2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        ) : (
+          <g transform={`rotate(${angle})`} opacity={moving ? 1 : 0.35}>
+            <path d="M-6 0 H5 M1 -4 L5 0 L1 4" stroke={SKY} strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </g>
+        )}
+      </g>
+    </g>
+  );
+}
+
+/** Board, pieces, cursor, ripple and toast for one frame. */
 function Scene({ f }: { f: Frame }) {
   const mate = f.mate > 0;
+  const e8 = center("e8");
   return (
     <>
       <g opacity={f.opacity}>
         <Board />
         {f.lastMove && (
           <>
-            <SquareTint sq={f.lastMove[0]} fill={GREEN} opacity={0.16} />
-            <SquareTint sq={f.lastMove[1]} fill={GREEN} opacity={0.24} />
+            <SquareTint sq={f.lastMove[0]} opacity={0.08} />
+            <SquareTint sq={f.lastMove[1]} opacity={0.14} />
           </>
         )}
-        {f.selected && <SquareTint sq={f.selected} fill={GREEN} opacity={0.32} />}
+        {f.selected && <SquareTint sq={f.selected} opacity={0.2} />}
         {mate && (
-          <g opacity={f.mate}>
-            <SquareTint sq="e8" fill={GREEN} opacity={0.38} />
-            <rect x={center("e8").x - SQ / 2 + 1.5} y={center("e8").y - SQ / 2 + 1.5} width={SQ - 3} height={SQ - 3} fill="none" stroke={GREEN} strokeWidth={2} rx={3} />
-          </g>
+          <rect x={e8.x - SQ / 2 + 1.5} y={e8.y - SQ / 2 + 1.5} width={SQ - 3} height={SQ - 3} rx={3} fill="none" stroke={NAVY} strokeWidth={2.5} opacity={f.mate} />
         )}
-        {f.hint && <circle cx={center(f.hint).x} cy={center(f.hint).y} r={5} fill={GREEN} opacity={0.45} />}
+        {f.hint && <circle cx={center(f.hint).x} cy={center(f.hint).y} r={5} fill={NAVY} opacity={0.3} />}
 
         {f.pieces.map(({ piece, at, lift, opacity }) => (
-          <g key={piece.id} opacity={opacity} transform={`translate(${at.x - 20} ${at.y - 20 - lift * 4}) `}>
-            {lift > 0 && <ellipse cx={20} cy={36 + lift * 3} rx={9 + lift * 2} ry={2.4} fill={INK} opacity={0.14 * lift} />}
+          <g key={piece.id} opacity={opacity} transform={`translate(${at.x - 20} ${at.y - 20 - lift * 4})`}>
+            {lift > 0 && <ellipse cx={20} cy={36 + lift * 3} rx={9 + lift * 2} ry={2.4} fill={NAVY} opacity={0.18 * lift} />}
             <g transform={`translate(20 20) scale(${1 + lift * 0.08}) translate(-20 -20)`}>
               <PieceShape type={piece.type} color={piece.color} />
             </g>
@@ -170,45 +193,33 @@ function Scene({ f }: { f: Frame }) {
 
         <MoveList done={f.movesDone} turn={f.turn} mate={mate} />
 
-        {/* HeadsUp cursor */}
         {f.ripple && (
-          <circle cx={f.ripple.at.x} cy={f.ripple.at.y} r={9 + 22 * f.ripple.p} fill="none" stroke={GREEN} strokeWidth={2.5 * (1 - f.ripple.p) + 0.5} opacity={0.7 * (1 - f.ripple.p)} />
+          <circle cx={f.ripple.at.x} cy={f.ripple.at.y} r={10 + 22 * f.ripple.p} fill="none" stroke={POINTER} strokeWidth={2.5 * (1 - f.ripple.p) + 0.5} opacity={0.9 * (1 - f.ripple.p)} />
         )}
         <g transform={`translate(${f.cursor.x} ${f.cursor.y})`}>
-          <circle r={11} fill={GREEN} opacity={0.22 + f.pressed * 0.2} />
-          <circle r={11} fill="none" stroke={GREEN} strokeWidth={2} />
-          <circle r={2.6} fill={GREEN} />
+          <circle r={12.5} fill="none" stroke={NAVY} strokeWidth={1.5} opacity={0.55} />
+          <circle r={11} fill={POINTER} opacity={0.3 + f.pressed * 0.25} />
+          <circle r={11} fill="none" stroke={POINTER} strokeWidth={2.4} />
+          <circle r={2.6} fill={POINTER} />
         </g>
 
         {f.toast > 0 && (
-          <g opacity={f.toast} transform={`translate(${BX + SQ * 4} ${BY + SQ * 8 - 24 - f.toast * 8})`}>
-            <rect x={-92} y={-17} width={184} height={34} rx={17} fill="#FFFFFF" stroke="#DDD6C8" filter="url(#chess-shadow)" />
-            <circle cx={-74} cy={0} r={4} fill={GREEN} />
-            <text x={8} y={4.2} textAnchor="middle" fontSize={12.5} fill={INK} fontWeight={500}>
+          <g opacity={f.toast} transform={`translate(${BX + SQ * 4} ${BY + SQ * 8 - 26 - f.toast * 8})`}>
+            <rect x={-94} y={-17} width={188} height={34} rx={17} fill={NAVY} />
+            <text y={4.2} textAnchor="middle" fontSize={12.5} fill="#FFFFFF" fontWeight={600}>
               Checkmate. No hands.
             </text>
           </g>
         )}
       </g>
-
-      {/* Head indicator badge */}
-      <g transform="translate(507 318)">
-        <circle r={44} fill="#FFFFFF" stroke="#DDD6C8" filter="url(#chess-shadow)" />
-        <g clipPath="url(#badge-clip)">
-          <HeadGlyph y={-12} scale={1.05} yaw={f.head.yaw} pitch={f.head.pitch} />
-        </g>
-        <rect x={-17} y={22} width={34} height={14} rx={7} fill={f.head.label === "nod" ? GREEN : "#EFEAE0"} />
-        <text y={32} textAnchor="middle" fontSize={9} fontWeight={600} letterSpacing={0.6} fill={f.head.label === "nod" ? "#FFFFFF" : "#4A4740"}>
-          {f.head.label}
-        </text>
-      </g>
+      <AirPodsPill head={f.head} />
     </>
   );
 }
 
+/** Hero demo; the loop pauses off-screen and shows a still frame for reduced motion. */
 export function ChessDemo() {
   const ref = useRef<HTMLDivElement>(null);
-  // IntersectionObserver-backed: the loop only runs while the demo is on screen.
   const inView = useInView(ref, { amount: 0.15 });
   const reduced = usePrefersReducedMotion();
   const t = useLoopClock(inView && !reduced, DURATION);
@@ -223,22 +234,12 @@ export function ChessDemo() {
         aria-label="Animated demo: HeadsUp moving chess pieces with head nods"
         style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
       >
-        <defs>
-          <filter id="chess-shadow" x="-30%" y="-30%" width="160%" height="170%">
-            <feDropShadow dx={0} dy={3} stdDeviation={4} floodColor={INK} floodOpacity={0.12} />
-          </filter>
-          <clipPath id="badge-clip">
-            <circle r={40} />
-          </clipPath>
-        </defs>
-        <rect width={640} height={400} fill={PAPER} />
-        {/* Minimal window bar */}
-        <rect width={640} height={28} fill="#E9E4DA" />
-        <line x1={0} x2={640} y1={28} y2={28} stroke="#DDD6C8" />
+        <rect width={640} height={400} fill="#F4F8FD" />
+        <rect width={640} height={28} fill="#D6E3F6" />
         {[16, 32, 48].map((x) => (
-          <circle key={x} cx={x} cy={14} r={4.5} fill="#CFC8BA" />
+          <circle key={x} cx={x} cy={14} r={4.5} fill="#B5C8E4" />
         ))}
-        <text x={320} y={18} textAnchor="middle" fontSize={11} fontWeight={500} fill="#4A4740">
+        <text x={320} y={18} textAnchor="middle" fontSize={11} fontWeight={600} fill={NAVY}>
           Chess
         </text>
         <Scene f={f} />

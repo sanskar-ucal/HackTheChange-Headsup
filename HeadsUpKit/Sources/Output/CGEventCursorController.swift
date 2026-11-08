@@ -2,13 +2,11 @@ import ApplicationServices
 import CoreGraphics
 import Foundation
 
-/// `CursorController` backed by `CGEvent`. Requires the Accessibility permission and an
-/// unsandboxed app. Moves are posted as real `mouseMoved` events so hover states update
-/// in other apps.
+/// `CursorController` backed by `CGEvent`.
 @MainActor
 public final class CGEventCursorController: CursorController {
     private let source = CGEventSource(stateID: .hidSystemState)
-    private let escapeKeyCode: CGKeyCode = 53  // kVK_Escape
+    private let escapeKeyCode: CGKeyCode = 53
 
     public init() {}
 

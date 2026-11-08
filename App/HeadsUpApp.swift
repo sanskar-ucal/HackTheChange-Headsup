@@ -2,6 +2,7 @@ import AppKit
 import HeadsUpKit
 import SwiftUI
 
+/// HeadsUp: a hands-free Mac mouse for people with tetraplegia, living in the menu bar.
 @main
 struct HeadsUpApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -35,7 +36,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         calibrationOverlay = CalibrationOverlayController(coordinator: coordinator)
         practiceOverlay = PracticeOverlayController(coordinator: coordinator)
         pointerOverlay = PointerOverlayController(coordinator: coordinator, store: environment.settingsStore)
-        // ⌃⌥⌘H toggles pause: a caregiver safety switch.
         hotKey = GlobalHotKey { [weak coordinator] in coordinator?.togglePause() }
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
@@ -63,14 +63,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func showOnboarding() {
-        windows.show(id: "onboarding", title: "Set up HeadsUp", size: CGSize(width: 500, height: 640)) {
+        windows.show(id: "onboarding", title: "Set up HeadsUp", size: CGSize(width: 500, height: 720)) {
             OnboardingView(coordinator: environment.coordinator, permissions: environment.permissions)
         }
     }
 }
 
-/// Creates and re-focuses plain AppKit windows hosting SwiftUI views. A menu-bar
-/// (LSUIElement) app has to activate itself for its windows to come to the front.
+/// Creates and re-focuses plain AppKit windows hosting SwiftUI views.
 @MainActor
 final class WindowPresenter {
     private var windows: [String: NSWindow] = [:]
