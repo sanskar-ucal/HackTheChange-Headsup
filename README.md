@@ -241,6 +241,9 @@ You can also change the color, size (S–XL) and opacity, and turn the high-cont
 | Nods not detected | Lower **Nod/shake speed** and **Nod size** |
 | Scrolling too fast / slow | **Scroll speed**; **Edge push distance** sets how far past the edge to look before scrolling starts |
 | Pointer moves the wrong way | **Advanced → Invert** toggles |
+| Blinks aren't counted | Watch the live indicator in **Blink gestures**. Raise **Eye-closed threshold** (helps with glasses), lower **Shortest blink**, and face the camera in even light |
+| Ordinary blinks start a click | Raise **Shortest blink** and lower **Time between blinks** |
+| Triple blinks click instead of cancel | Raise **Time between blinks** so the third blink still counts |
 
 Every Settings control has a 44 pt target, and sliders have −/+ buttons, so Settings itself can be used with head pointing and nods.
 
@@ -283,6 +286,7 @@ log stream --info --predicate 'subsystem == "com.hackthechange.HeadsUp"'
 - **With double nod turned on, single-nod clicks wait for a possible second nod**, about 0.4 s after the nod is recognized. It's off by default, so clicks are immediate.
 - **Scroll routing.** Scroll events go to the window under the last in-content pointer position. Apps that ignore pixel-precise synthetic scroll events may scroll in coarse steps.
 - **Absolute pointing drift.** Head orientation isn't gaze, and yaw drifts slowly. Recenter with tilt-right or by holding still.
+- **Blink detection depends on the camera view.** Dim light, strong backlight, glare on glasses or turning the head far from the camera (about 40°) can hide the eyes; HeadsUp then ignores blinks rather than guessing. A double blink clicks only after the third-blink wait (*Time between blinks*, 0.5 s by default).
 - Not included: dwell-click, drag, right-click, an on-screen keyboard, voice commands beyond dictation, profiles, signing and notarization.
 
 ## Tests
@@ -294,5 +298,6 @@ log stream --info --predicate 'subsystem == "com.hackthechange.HeadsUp"'
 - **Calibration & voice:** calibration (median capture, moving capture rejected, center drift check); practice suggestions; text-field classification
 - **Nod clicks:** a nod clicks at the onset point with zero cursor movement from onset until 400 ms after the click, then glides to the head position; rejected nods release without a jump
 - **Coordinator:** the full state machine with mocks: permissions, calibration, practice, pause/resume, disconnect, edge and mode scrolling, voice flow (listen → Return / undo / keep), and "no events while paused or dictating"
+- **Blink gestures:** double blink selects only after the third-blink window, triple blink cancels without selecting, ordinary blinking never acts, cooldown, face loss and frame gaps reset a sequence; the open-eye baseline and hysteresis; the camera runs only while enabled and tracking, and stale or denied camera events never act
 
 Fixtures are regenerated with `python scripts/generate_fixtures.py`.
