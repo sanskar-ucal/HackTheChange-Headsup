@@ -179,15 +179,22 @@ extension AppCoordinator {
         lastGesture = gesture
         switch dispatcher.action(for: gesture) {
         case .click:
-            // Click exactly at the frozen spot, then keep the cursor still like a mouse ("Hold after click").
-            postAction { dispatcher.dispatch(gesture, at: point) }
+            // A nod on the scroll-to-top button sends the key instead of a mouse click, so the
+            // browser never sees a click near its toolbar.
+            let onTopButton = isOnScrollToTopButton(point)
+            if onTopButton {
+                scrollToTop()
+            } else {
+                // Click exactly at the frozen spot, then keep the cursor still like a mouse ("Hold after click").
+                postAction { dispatcher.dispatch(gesture, at: point) }
+            }
             animator.place(at: point)
             lastPostedPoint = point
             frozenPoint = point
             pointerFrozen = true
             freezeUntil = deps.clock() + settings.holdAfterClick
             pressingUntil = deps.clock() + 0.2
-            didPerformClick()
+            if !onTopButton { didPerformClick() }
         case .escape:
             postAction { dispatcher.dispatch(gesture, at: point) }
         case .toggleScrollMode:

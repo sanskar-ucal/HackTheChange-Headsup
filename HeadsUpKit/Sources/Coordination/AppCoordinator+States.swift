@@ -126,6 +126,20 @@ extension AppCoordinator {
         deps.feedback.play(.select)
     }
 
+    /// Scrolls the frontmost app to the top (⌘↑, or Home in browsers) and flashes the button.
+    public func scrollToTop() {
+        postAction {
+            deps.cursor.pressKey(.scrollToTop)
+            deps.feedback.play(.select)
+        }
+        scrollToTopFlash += 1
+    }
+
+    func isOnScrollToTopButton(_ point: CGPoint) -> Bool {
+        guard settings.showScrollToTopButton, let frame = scrollToTopFrame else { return false }
+        return frame.contains(point)
+    }
+
     func announce(_ text: String) {
         deps.announcer.announce(text)
     }

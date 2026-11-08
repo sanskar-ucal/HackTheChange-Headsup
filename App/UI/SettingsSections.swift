@@ -59,6 +59,9 @@ struct PointerSettingsSection: View {
         BigToggle(title: "Hide system pointer (experimental)",
                   help: "macOS may only hide it while HeadsUp is frontmost. Off keeps the arrow under the fingertip.",
                   isOn: $settings.hideSystemCursor)
+        BigToggle(title: "Show scroll-to-top button",
+                  help: "A \u{201C}Top\u{201D} button near the top-right corner. Nod on it to jump to the top of the page.",
+                  isOn: $settings.showScrollToTopButton)
     }
 }
 

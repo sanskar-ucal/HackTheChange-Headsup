@@ -1,4 +1,6 @@
+import AppKit
 import ApplicationServices
+import Carbon.HIToolbox
 import CoreGraphics
 import Foundation
 
@@ -33,11 +35,24 @@ public final class CGEventCursorController: CursorController {
     public func pressKey(_ key: KeyCommand) {
         guard AXIsProcessTrusted() else { return }
         let code: CGKeyCode
+        var flags: CGEventFlags = []
         switch key {
-        case .escape: code = escapeKeyCode
+        case .escape:
+            code = escapeKeyCode
+        case .scrollToTop:
+            let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+            switch ScrollToTopKey.key(forFrontmostBundleID: bundleID) {
+            case .home:
+                code = CGKeyCode(kVK_Home)
+            case .commandUp:
+                code = CGKeyCode(kVK_UpArrow)
+                flags = .maskCommand
+            }
         }
         for isDown in [true, false] {
-            CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: isDown)?.post(tap: .cghidEventTap)
+            let event = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: isDown)
+            if !flags.isEmpty { event?.flags = flags }
+            event?.post(tap: .cghidEventTap)
         }
     }
 }

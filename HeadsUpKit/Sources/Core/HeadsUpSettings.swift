@@ -117,6 +117,8 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     public var pointerHighContrast: Bool = true
     /// Experimental: hide the system arrow while tracking (see README).
     public var hideSystemCursor: Bool = false
+    /// Floating "Top" button near the top-right corner: nodding on it scrolls the frontmost app to the top.
+    public var showScrollToTopButton: Bool = true
 
     /// Accessibility request timeout for voice input's focused-field checks.
     public var axMessagingTimeout: Double = 0.05

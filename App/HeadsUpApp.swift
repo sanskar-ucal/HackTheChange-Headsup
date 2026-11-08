@@ -28,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var calibrationOverlay: CalibrationOverlayController?
     private var practiceOverlay: PracticeOverlayController?
     private var pointerOverlay: PointerOverlayController?
+    private var scrollToTopPanel: ScrollToTopPanelController?
     private var hotKey: GlobalHotKey?
     private var screenObserver: NSObjectProtocol?
 
@@ -36,6 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         calibrationOverlay = CalibrationOverlayController(coordinator: coordinator)
         practiceOverlay = PracticeOverlayController(coordinator: coordinator)
         pointerOverlay = PointerOverlayController(coordinator: coordinator, store: environment.settingsStore)
+        scrollToTopPanel = ScrollToTopPanelController(coordinator: coordinator, store: environment.settingsStore)
         hotKey = GlobalHotKey { [weak coordinator] in coordinator?.togglePause() }
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main

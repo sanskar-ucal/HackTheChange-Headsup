@@ -22,6 +22,8 @@ public final class AppCoordinator: ObservableObject {
     @Published public internal(set) var pointerContext: PointerContext = .idle
     @Published public internal(set) var transcript = ""
     @Published public internal(set) var practice: PracticeSession?
+    /// Increments each time the scroll-to-top button is used, so the UI can flash it.
+    @Published public internal(set) var scrollToTopFlash = 0
 
     public let telemetry: LiveTelemetry
     public let recorder: MotionRecorder
@@ -60,6 +62,8 @@ public final class AppCoordinator: ObservableObject {
     var voiceInsertion: InsertionRecord?
     var voiceReviewStart: TimeInterval?
     var lastClickTime: TimeInterval = -.infinity
+    /// Global (top-left) frame of the visible scroll-to-top button; nil while it's hidden.
+    public var scrollToTopFrame: CGRect?
 
     static let log = Logger(subsystem: "com.hackthechange.HeadsUp", category: "coordinator")
     static let signposter = OSSignposter(subsystem: "com.hackthechange.HeadsUp", category: .pointsOfInterest)
