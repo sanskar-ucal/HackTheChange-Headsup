@@ -9,8 +9,6 @@ extension AppCoordinator {
         recorder.record(sensorPose)
         meter.recordSample()
         if !isHeadphonesConnected { handleConnection(.connected) }
-        let rate = sensorPose.rotationRate
-        headRateDegPerSec = AngleMath.degrees((rate.pitch * rate.pitch + rate.yaw * rate.yaw + rate.roll * rate.roll).squareRoot())
 
         let raw = sensorPose.adjusted(
             invertYaw: settings.invertYaw, invertPitch: settings.invertPitch, invertRoll: settings.invertRoll)
@@ -143,7 +141,7 @@ extension AppCoordinator {
             frozenPoint = here
             pointerFrozen = true
             freezeUntil = nil
-        } else if !output.isFrozen, pointerFrozen, freezeUntil == nil, !blinkHold {
+        } else if !output.isFrozen, pointerFrozen, freezeUntil == nil {
             releasePointer()
             return true
         }
@@ -178,9 +176,7 @@ extension AppCoordinator {
         }
     }
 
-    func perform(_ gesture: HeadGesture, at point: CGPoint) {
-        if gesture == .nod || gesture == .shake,
-           !settings.clickInput.nodShakeActive(blinkEnabled: settings.blinkEnabled) { return }
+    private func perform(_ gesture: HeadGesture, at point: CGPoint) {
         lastGesture = gesture
         switch dispatcher.action(for: gesture) {
         case .click:

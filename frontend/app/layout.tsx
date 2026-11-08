@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Inter_Tight } from "next/font/google";
+import { Instrument_Serif, Inter } from "next/font/google";
 import type { ReactNode } from "react";
 import { Providers } from "@/components/Providers";
 import { SITE_URL } from "@/site.config";
 import "./globals.css";
 
-const display = Inter_Tight({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-inter-tight", display: "swap" });
+const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-instrument-serif", display: "swap" });
 const sans = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 const title = "HeadsUp: a hands-free Mac mouse for people with tetraplegia";
@@ -33,20 +33,20 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0B1A30",
-  colorScheme: "dark",
+  themeColor: "#F3EFE6",
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable}`}>
+    <html lang="en" className={`${serif.variable} ${sans.variable}`}>
       <head>
         <noscript>
           <style>{`[style*="opacity:0"]{opacity:1!important;transform:none!important}`}</style>
         </noscript>
       </head>
       <body>
-        <a href="#main" className="fixed left-4 top-3 z-[100] -translate-y-24 rounded-full bg-sky px-5 py-3 font-semibold text-navy transition-transform focus:translate-y-0">
+        <a href="#main" className="fixed left-4 top-3 z-[100] -translate-y-24 rounded-full bg-ink px-5 py-3 font-semibold text-paper transition-transform focus:translate-y-0">
           Skip to content
         </a>
         <Providers>{children}</Providers>

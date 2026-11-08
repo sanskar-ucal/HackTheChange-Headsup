@@ -15,25 +15,6 @@ public enum VoiceInputTrigger: String, Codable, Sendable, CaseIterable {
     }
 }
 
-/// Which gestures click and press Escape.
-public enum ClickInput: String, Codable, Sendable, CaseIterable {
-    case nodAndShake
-    case blinks
-    case both
-
-    public var displayName: String {
-        switch self {
-        case .nodAndShake: return "Nod & shake"
-        case .blinks: return "Blinks"
-        case .both: return "Both"
-        }
-    }
-
-    public func nodShakeActive(blinkEnabled: Bool) -> Bool { !blinkEnabled || self != .blinks }
-
-    public func blinksActive(blinkEnabled: Bool) -> Bool { blinkEnabled && self != .nodAndShake }
-}
-
 /// The pointer overlay's visual style.
 public enum PointerStyleKind: String, Codable, Sendable, CaseIterable {
     case hand

@@ -1,20 +1,18 @@
 import { finalCta } from "@/content/site";
 import { Reveal } from "./Reveal";
-import { GitHubButton } from "./ui";
+import { Emph } from "./ui";
 
-/** Closing line with the GitHub call to action. */
+/** Closing serif line on pale blue. */
 export function FinalCTA() {
   return (
-    <section aria-labelledby="cta-title" className="bg-navy">
-      <div className="mx-auto max-w-7xl px-5 py-28 sm:px-8 sm:py-40">
-        <Reveal className="grid gap-10 lg:grid-cols-[1.5fr_1fr] lg:items-end">
-          <h2 id="cta-title" className="display text-[clamp(3rem,8vw,7rem)]">
-            {finalCta.title}
+    <section aria-labelledby="cta-title" className="bg-pale">
+      <div className="mx-auto max-w-6xl px-5 py-28 text-center sm:px-8 sm:py-40">
+        <Reveal>
+          <span aria-hidden className="mx-auto mb-10 block h-3 w-3 rounded-full bg-blue" />
+          <h2 id="cta-title" className="display mx-auto max-w-4xl text-[clamp(3rem,8vw,5.75rem)]">
+            <Emph text={finalCta.title} />
           </h2>
-          <div className="lg:pb-4">
-            <p className="max-w-sm text-lg leading-relaxed text-white/75">{finalCta.body}</p>
-            <GitHubButton label={finalCta.cta} className="mt-8" />
-          </div>
+          <p className="mx-auto mt-8 max-w-md text-lg leading-relaxed text-ink-soft">{finalCta.body}</p>
         </Reveal>
       </div>
     </section>

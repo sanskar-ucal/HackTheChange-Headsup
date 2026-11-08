@@ -1,6 +1,6 @@
 # HeadsUp
 
-HeadsUp is a hands-free Mac mouse for people with tetraplegia. It's a macOS menu-bar app that turns **head movement** into full pointer control, using AirPods with dynamic head tracking as the sensor. Point by turning your head, nod to click, look past the top or bottom edge to scroll, and speak into search fields. Every action is confirmed with a short sound in the AirPods. Optional **blink controls (beta)** use the Mac's camera so a double blink can click as well. A caregiver can help with the one-time setup; after that, everyday use is hands-free.
+HeadsUp is a hands-free Mac mouse for people with tetraplegia. It's a macOS menu-bar app that turns **head movement** into full pointer control, using AirPods with dynamic head tracking as the sensor. Point by turning your head, nod to click, look past the top or bottom edge to scroll, and speak into search fields. Every action is confirmed with a short sound in the AirPods. A caregiver can help with the one-time setup; after that, everyday use is hands-free.
 
 ## Installation
 
@@ -53,7 +53,6 @@ HeadsUp needs two permissions, plus two optional ones for voice search. The setu
 | **Motion & Fitness** | Required | Lets HeadsUp read head movement from the AirPods | macOS asks the first time the AirPods send motion: click **Allow**. To change it later: *Privacy & Security* → **Motion & Fitness** → **HeadsUp** |
 | **Microphone** | Optional | Voice search: speak into search fields | macOS asks the first time voice input starts. Later: *Privacy & Security* → **Microphone** → **HeadsUp** |
 | **Speech Recognition** | Optional | Turns speech into text, on the Mac when supported | macOS asks together with the microphone. Later: *Privacy & Security* → **Speech Recognition** → **HeadsUp** |
-| **Camera** | Optional | Blink controls (beta): double blink to click, triple blink for Escape | Setup window → **Allow Camera**, or *Privacy & Security* → **Camera** → **HeadsUp** |
 
 > **The toggle is on, but it still doesn't work?** This often happens after updating or replacing the app, because macOS remembers the old copy.
 > 1. Quit HeadsUp (menu-bar icon → **Quit**).
@@ -203,24 +202,6 @@ If **Practice after calibration** is turned on (off by default), a **20-second p
 
 On later launches, hold still facing the screen for 2 s (or tilt right) to recenter.
 
-## Blink controls (beta)
-
-An optional second way to click, for times when nodding is tiring. The AirPods still move the pointer; the Mac's built-in camera only watches for blinks.
-
-| Blink pattern | Action |
-|---|---|
-| Single blink | Nothing (normal blinking is ignored) |
-| Double blink | Left click, exactly like a nod: the pointer holds still where the first blink began |
-| Triple blink | Escape, like a shake |
-
-- **Off by default.** Turn it on in **Settings → Blink controls**. *Input for clicking* chooses **Nod & shake**, **Blinks** or **Both**. If blink controls are off, nod and shake always work.
-- **Private.** AVFoundation + Vision face landmarks run on this Mac. Frames are analyzed in memory and dropped: nothing is stored, sent, or used to identify anyone. The camera runs only while blink controls are on and HeadsUp is tracking.
-- **How it decides.** Each eye's openness (Eye Aspect Ratio) is compared to your own open-eye baseline, learned continuously over the last ~5 s. Both eyes must close below 60 % of the baseline and reopen above 80 %. A blink lasts 50–400 ms, so winks and resting your eyes never count. Blinks up to 450 ms apart form one sequence, and there's a 700 ms cooldown after an action.
-- **Safety checks.** Blinks are ignored while paused, calibrating or listening, while your head turns faster than 40°/s, and whenever the camera can't see well: the live status chip shows *No face*, *Low light*, *Face turned* or *Too far*.
-- **Tuning.** Sensitivity, max gap, shortest/longest blink, cooldown and *Require both eyes* are in Settings, with live eye meters and sequence dots. Dots also appear next to the pointer while a sequence is counting.
-- If the camera fails, Settings shows why and retries; nod and shake keep working. If access is denied, **Open Camera Settings** goes straight to Privacy & Security → Camera. Each step (permission, device, session running, frames/s) is listed in **Settings → Advanced → Live readout**.
-- **Permission stuck?** Ad-hoc rebuilds can leave a stale camera grant. Quit HeadsUp, run `tccutil reset Camera com.hackthechange.HeadsUp`, then reopen it and allow the camera again.
-
 ## Pointer styles
 
 **Settings → Pointer** offers five styles:
@@ -303,7 +284,6 @@ log stream --info --predicate 'subsystem == "com.hackthechange.HeadsUp"'
 - **Pointer:** pointer context → shape mapping; settings persistence; 3 pt dead zone
 - **Calibration & voice:** calibration (median capture, moving capture rejected, center drift check); practice suggestions; text-field classification
 - **Nod clicks:** a nod clicks at the onset point with zero cursor movement from onset until 400 ms after the click, then glides to the head position; rejected nods release without a jump
-- **Blinks:** single/double/triple/four blinks, long closures, winks, low confidence, cooldown, baseline adapting to a new user, fast head motion, and the *Input for clicking* choice
 - **Coordinator:** the full state machine with mocks: permissions, calibration, practice, pause/resume, disconnect, edge and mode scrolling, voice flow (listen → Return / undo / keep), and "no events while paused or dictating"
 
 Fixtures are regenerated with `python scripts/generate_fixtures.py`.

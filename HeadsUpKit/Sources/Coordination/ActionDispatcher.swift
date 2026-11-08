@@ -25,8 +25,6 @@ public final class ActionDispatcher {
         .shake: .escape,
         .tiltHoldLeft: .togglePause,
         .tiltHoldRight: .recenter,
-        .doubleBlink: .click,
-        .tripleBlink: .escape,
     ]
 
     public init(cursor: CursorController, feedback: FeedbackService,

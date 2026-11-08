@@ -57,26 +57,13 @@ struct OnboardingView: View {
                 }
             }
 
-            step(
-                number: 5, title: "Blink controls (optional, beta)",
-                detail: "Lets the camera notice double blinks (click) and triple blinks (Escape). "
-                    + "Turn it on in Settings → Blink controls. Video stays on this Mac and is never stored.",
-                done: coordinator.permissionStatus.camera == .authorized
-            ) {
-                if coordinator.permissionStatus.camera == .notDetermined {
-                    Button("Allow Camera") { permissions.requestCamera() }
-                } else {
-                    Button("Camera Settings") { permissions.openCameraSettings() }
-                }
-            }
-
             Divider()
             Text(nextStepText)
                 .font(.callout)
             Spacer()
         }
         .padding(24)
-        .frame(minWidth: 460, minHeight: 680)
+        .frame(minWidth: 460, minHeight: 600)
         .onReceive(poll) { _ in coordinator.refreshPermissions() }
     }
 

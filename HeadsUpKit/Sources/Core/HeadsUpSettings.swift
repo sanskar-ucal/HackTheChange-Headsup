@@ -119,24 +119,6 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     /// Accessibility request timeout for voice input's focused-field checks.
     public var axMessagingTimeout: Double = 0.05
 
-    // MARK: Blink controls
-    public var blinkEnabled: Bool = false
-    public var clickInput: ClickInput = .both
-    /// 0…1; higher counts shallower eye closures as blinks.
-    public var blinkSensitivity: Double = 0.5
-    public var blinkMaxGap: Double = 0.45
-    public var blinkMinDuration: Double = 0.05
-    public var blinkMaxDuration: Double = 0.4
-    public var blinkCooldown: Double = 0.7
-    public var blinkRequireBothEyes: Bool = true
-    public var blinkBaselineWindow: Double = 5
-    /// Blinks are ignored while the AirPods report a faster head turn than this.
-    public var blinkMaxHeadRateDegPerSec: Double = 40
-    public var blinkMinConfidence: Double = 0.5
-    public var blinkMinBrightness: Double = 0.12
-    public var blinkMaxFaceYawDegrees: Double = 30
-    public var blinkMinFaceSize: Double = 0.12
-
     // MARK: Sound
     public var feedbackVolume: Double = 0.6
     public var feedbackMuted: Bool = false

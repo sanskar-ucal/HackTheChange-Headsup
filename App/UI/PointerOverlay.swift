@@ -83,7 +83,7 @@ final class PointerOverlayController {
     }
 }
 
-/// The pointer glyph plus hold ring, blink dots and transcript, drawn around the overlay anchor.
+/// The pointer glyph plus hold ring and transcript, drawn around the overlay anchor.
 struct PointerOverlayView: View {
     @ObservedObject var coordinator: AppCoordinator
     @ObservedObject var store: SettingsStore
@@ -109,12 +109,6 @@ struct PointerOverlayView: View {
                 .id(shapeKey(shape))
                 .transition(.opacity.combined(with: .scale(scale: 0.85)))
                 .offset(x: anchor.x - CGFloat(shape.hotspot.x) * size, y: anchor.y - CGFloat(shape.hotspot.y) * size)
-            if coordinator.blinkSequenceCount > 0 {
-                SequenceDots(count: min(coordinator.blinkSequenceCount, 3))
-                    .padding(5)
-                    .background(Capsule().fill(Color.black.opacity(0.7)))
-                    .offset(x: anchor.x + size * 0.55, y: anchor.y - size * 0.75)
-            }
             if !coordinator.transcript.isEmpty {
                 TranscriptBubble(text: coordinator.transcript, reviewing: coordinator.state == .voiceReview)
                     .offset(x: anchor.x + size * 0.5, y: anchor.y + size * 0.6)

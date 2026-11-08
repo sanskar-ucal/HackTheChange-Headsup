@@ -1,17 +1,25 @@
 @import "tailwindcss";
 
 @theme {
+  --color-paper: #f3efe6;
+  --color-paper-deep: #ebe5d8;
+  --color-ink: #1d1c1a;
+  --color-muted: #8a857b;
+  --color-ink-soft: #5c5850;
+  --color-line: #ddd6c8;
+  --color-sky: #a8c6f0;
+  --color-blue: #3e6fb0;
+  --color-blue-ink: #355f99;
+  --color-pale: #e6effb;
   --color-navy: #0b1a30;
   --color-navy-2: #12243f;
   --color-navy-3: #1b3152;
-  --color-sky: #a8c6f0;
-  --color-pale: #e6effb;
-  --color-pale-2: #d6e3f6;
-  --color-ink-soft: #46546a;
-  --color-pointer: #33d959;
 
-  --font-display: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), "Iowan Old Style", Georgia, serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --shadow-card: 0 1px 2px rgb(29 28 26 / 0.04), 0 8px 24px -8px rgb(29 28 26 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(29 28 26 / 0.05), 0 24px 48px -16px rgb(29 28 26 / 0.22);
 }
 
 html {
@@ -21,27 +29,47 @@ html {
 }
 
 body {
-  background: var(--color-navy);
-  color: #fff;
+  background: var(--color-paper);
+  color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
 .display {
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  line-height: 0.95;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.02;
+}
+
+.em {
+  font-style: italic;
+  color: var(--color-blue);
+}
+
+.on-dark .em {
+  color: var(--color-sky);
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-sky);
+  outline: 3px solid var(--color-ink);
   outline-offset: 3px;
   border-radius: 8px;
 }
 
-.on-pale :focus-visible {
-  outline-color: var(--color-navy);
+.on-dark :focus-visible {
+  outline-color: var(--color-sky);
 }
 
 @keyframes rise {
@@ -51,6 +79,10 @@ body {
 
 .rise {
   animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-laptop {
+  width: min(100%, calc((min(55vh, 100vh - 22rem) - 1rem) * 1.76));
 }
 
 @media (prefers-reduced-motion: reduce) {

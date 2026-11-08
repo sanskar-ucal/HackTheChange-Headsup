@@ -6,9 +6,9 @@ import { hero } from "@/content/site";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { ChessDemo } from "./hero/ChessDemo";
 import { Laptop } from "./Laptop";
-import { Eyebrow, GitHubButton } from "./ui";
+import { Emph, GitHubButton } from "./ui";
 
-/** Navy opener: headline left, pitch right, and a large laptop playing chess below. */
+/** Centered opener: headline, the chess laptop sized to fit the first screen, then the pitch and the GitHub button. */
 export function Hero() {
   const reduced = usePrefersReducedMotion();
   const mx = useMotionValue(0);
@@ -28,39 +28,33 @@ export function Hero() {
     <section
       id="top"
       aria-labelledby="hero-title"
-      className="relative overflow-hidden bg-navy"
+      className="relative overflow-hidden"
       onPointerMove={onMove}
       onPointerLeave={() => {
         mx.set(0);
         my.set(0);
       }}
     >
-      <div className="mx-auto max-w-7xl px-5 pt-14 sm:px-8 sm:pt-20 lg:pt-24">
-        <div className="grid items-end gap-10 lg:grid-cols-[1.35fr_1fr] lg:gap-16">
-          <div className="rise">
-            <Eyebrow>{hero.eyebrow}</Eyebrow>
-            <h1 id="hero-title" className="display text-[clamp(3.4rem,10vw,8.25rem)]">
-              {hero.headline}
-            </h1>
-          </div>
-          <div className="rise [animation-delay:120ms] lg:pb-3">
-            <p className="max-w-md text-lg leading-relaxed text-white/80 sm:text-xl">{hero.subline}</p>
-            <GitHubButton label={hero.cta} className="mt-8" />
-          </div>
-        </div>
+      <div className="mx-auto flex max-w-6xl flex-col items-center px-5 pb-16 pt-6 text-center sm:px-8 sm:pt-8">
+        <h1 id="hero-title" className="display rise text-[clamp(2.75rem,5vw,4.25rem)]">
+          <Emph text={hero.headline} />
+        </h1>
 
-        <div className="rise mt-14 [animation-delay:220ms] sm:mt-20" style={{ perspective: 1600 }}>
+        <div className="hero-laptop rise mt-5 [animation-delay:120ms]" style={{ perspective: 1600 }}>
           <motion.div style={reduced ? undefined : { rotateX, rotateY }}>
-            <Laptop className="max-w-6xl">
+            <Laptop>
               <ChessDemo />
             </Laptop>
           </motion.div>
         </div>
 
-        <ul className="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-10 gap-y-3 py-12 text-[0.95rem] text-white/75 sm:justify-between">
+        <p className="rise mt-6 max-w-2xl text-lg leading-relaxed text-ink-soft [animation-delay:200ms]">{hero.subline}</p>
+        <GitHubButton label={hero.cta} className="rise mt-5 [animation-delay:260ms]" />
+
+        <ul className="mt-10 flex flex-wrap justify-center gap-x-8 gap-y-2 text-[0.95rem] text-ink-soft">
           {hero.facts.map((f) => (
-            <li key={f} className="flex items-center gap-3">
-              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-sky" />
+            <li key={f} className="flex items-center gap-2.5">
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-blue" />
               {f}
             </li>
           ))}

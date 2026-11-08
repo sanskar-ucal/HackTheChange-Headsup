@@ -22,17 +22,14 @@ public struct PermissionStatus: Sendable, Equatable {
     public var motionHardwareAvailable: Bool
     public var microphone: AuthorizationState
     public var speechRecognition: AuthorizationState
-    public var camera: AuthorizationState
 
     public init(accessibilityTrusted: Bool, motion: MotionAuthorization, motionHardwareAvailable: Bool,
-                microphone: AuthorizationState = .notDetermined, speechRecognition: AuthorizationState = .notDetermined,
-                camera: AuthorizationState = .notDetermined) {
+                microphone: AuthorizationState = .notDetermined, speechRecognition: AuthorizationState = .notDetermined) {
         self.accessibilityTrusted = accessibilityTrusted
         self.motion = motion
         self.motionHardwareAvailable = motionHardwareAvailable
         self.microphone = microphone
         self.speechRecognition = speechRecognition
-        self.camera = camera
     }
 
     public var isVoiceInputReady: Bool { microphone == .authorized && speechRecognition == .authorized }
@@ -53,8 +50,6 @@ public protocol PermissionsProviding: AnyObject {
     func requestSpeechRecognition()
     func openMicrophoneSettings()
     func openSpeechRecognitionSettings()
-    func requestCamera()
-    func openCameraSettings()
 }
 
 /// Reads and requests permissions from macOS.
@@ -70,8 +65,7 @@ public final class SystemPermissionsService: PermissionsProviding {
             motion: Self.motionAuthorization(),
             motionHardwareAvailable: motionManager.isDeviceMotionAvailable,
             microphone: Self.microphoneAuthorization(),
-            speechRecognition: Self.speechAuthorization(),
-            camera: Self.captureAuthorization(for: .video))
+            speechRecognition: Self.speechAuthorization())
     }
 
     public func promptForAccessibility() {
@@ -101,14 +95,6 @@ public final class SystemPermissionsService: PermissionsProviding {
 
     public func openSpeechRecognitionSettings() {
         open("x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition")
-    }
-
-    public func requestCamera() {
-        AVCaptureDevice.requestAccess(for: .video) { _ in }
-    }
-
-    public func openCameraSettings() {
-        open("x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")
     }
 
     private func open(_ string: String) {

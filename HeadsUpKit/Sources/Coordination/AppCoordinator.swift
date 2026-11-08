@@ -22,10 +22,8 @@ public final class AppCoordinator: ObservableObject {
     @Published public internal(set) var pointerContext: PointerContext = .idle
     @Published public internal(set) var transcript = ""
     @Published public internal(set) var practice: PracticeSession?
-    @Published public internal(set) var blinkSequenceCount = 0
 
     public let telemetry: LiveTelemetry
-    public let blinkTelemetry: BlinkTelemetry
     public let recorder: MotionRecorder
     public internal(set) var settings: HeadsUpSettings
     public internal(set) var calibration: Calibration?
@@ -64,18 +62,6 @@ public final class AppCoordinator: ObservableObject {
     var voiceReviewStart: TimeInterval?
     var lastClickTime: TimeInterval = -.infinity
 
-    var blinkDetector: BlinkDetector
-    var blinkSequence: BlinkSequenceRecognizer
-    var blinkQuality: BlinkQualityMonitor
-    var blinkAnchor: CGPoint?
-    var blinkHold = false
-    var cameraRetryPending = false
-    var headRateDegPerSec = 0.0
-    var cameraFrameCount = 0
-    var cameraFpsWindowStart: TimeInterval?
-    var lastCameraFpsLog: TimeInterval = -.infinity
-    var cameraAccessRequested = false
-
     static let log = Logger(subsystem: "com.hackthechange.HeadsUp", category: "coordinator")
     static let signposter = OSSignposter(subsystem: "com.hackthechange.HeadsUp", category: .pointsOfInterest)
 
@@ -93,7 +79,6 @@ public final class AppCoordinator: ObservableObject {
         self.settings = settings
         self.recorder = recorder ?? MotionRecorder()
         telemetry = LiveTelemetry()
-        blinkTelemetry = BlinkTelemetry()
         dispatcher = ActionDispatcher(cursor: dependencies.cursor, feedback: dependencies.feedback)
         permissionStatus = dependencies.permissions.currentStatus()
         calibration = savedCalibration
@@ -104,9 +89,6 @@ public final class AppCoordinator: ObservableObject {
             toleranceDegrees: settings.autoRecenterToleranceDegrees, duration: settings.autoRecenterStillDuration)
         animator = PointerAnimator(stiffness: settings.pointerSpringStiffness)
         modeRecognizer = DoubleNodRecognizer(settings: settings)
-        blinkDetector = BlinkDetector(config: BlinkConfig(settings: settings))
-        blinkSequence = BlinkSequenceRecognizer(config: BlinkSequenceConfig(settings: settings))
-        blinkQuality = BlinkQualityMonitor(settings: settings)
         dependencies.feedback.configure(volume: settings.feedbackVolume, muted: settings.feedbackMuted)
         dependencies.announcer.isEnabled = settings.speechEnabled
     }
@@ -125,10 +107,6 @@ public final class AppCoordinator: ObservableObject {
         })
         deps.frameClock.start { [weak self] timestamp in self?.renderFrame(at: timestamp) }
         deps.focusReader.onFocusChange = { [weak self] in self?.handleFocusChange() }
-        deps.faceSource?.onFrame = { [weak self] in self?.handle(faceFrame: $0) }
-        deps.faceSource?.onFailure = { [weak self] in self?.handleCameraFailure($0) }
-        deps.faceSource?.onRunning = { [weak self] in self?.blinkTelemetry.camera = .running }
-        deps.faceSource?.onLog = { [weak self] in self?.logCamera($0) }
         source.start()
         startDiagnostics()
         refreshPermissions()
@@ -142,7 +120,6 @@ public final class AppCoordinator: ObservableObject {
         deps.frameClock.stop()
         deps.speech.cancel()
         deps.motionSource.stop()
-        deps.faceSource?.stop()
         deps.keepAlive.stop()
         isStarted = false
     }

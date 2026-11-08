@@ -4,7 +4,7 @@ import { useState } from "react";
 import { gestures, type GestureId } from "@/content/site";
 import { clamp, easeInOut, useLoopClock, useNoHover, usePrefersReducedMotion } from "@/lib/hooks";
 import { Reveal } from "./Reveal";
-import { Eyebrow, POINTER_GREEN } from "./ui";
+import { Emph, Eyebrow, POINTER_FILL, POINTER_RING } from "./ui";
 
 const NAVY = "#0B1A30";
 const SKY = "#A8C6F0";
@@ -109,16 +109,16 @@ function Scene({ id, t, still }: { id: GestureId; t: number; still: boolean }) {
           </g>
         )}
         {s.ripple >= 0 && (
-          <circle cx={s.dot.x} cy={s.dot.y} r={9 + 16 * s.ripple} fill="none" stroke={POINTER_GREEN} strokeWidth={2.5} opacity={1 - s.ripple} />
+          <circle cx={s.dot.x} cy={s.dot.y} r={9 + 16 * s.ripple} fill="none" stroke={POINTER_RING} strokeWidth={2.5} opacity={1 - s.ripple} />
         )}
         {s.progress > 0 && (
           <circle cx={s.dot.x} cy={s.dot.y} r={15} fill="none" stroke={NAVY} strokeWidth={3} strokeLinecap="round"
             strokeDasharray={`${s.progress * 94} 94`} transform={`rotate(-90 ${s.dot.x} ${s.dot.y})`} />
         )}
         <g transform={`translate(${s.dot.x} ${s.dot.y})`} opacity={paused ? 0.45 : 1}>
-          <circle r={9} fill={POINTER_GREEN} opacity={0.3} />
-          <circle r={9} fill="none" stroke={POINTER_GREEN} strokeWidth={2.2} />
-          <circle r={2.2} fill={POINTER_GREEN} />
+          <circle r={9} fill={POINTER_FILL} opacity={0.75} />
+          <circle r={9} fill="none" stroke={POINTER_RING} strokeWidth={2.2} />
+          <circle r={2.2} fill={POINTER_RING} />
           {paused && (
             <g transform="translate(9 -10)">
               <circle r={7} fill={NAVY} />
@@ -171,7 +171,7 @@ function GestureRow({ item, index }: { item: (typeof gestures.items)[number]; in
         </div>
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h3 id={titleId} className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight">
+            <h3 id={titleId} className="display text-[2rem]">
               {item.name}
             </h3>
             <p className="rounded-full bg-sky px-3 py-1 text-sm font-semibold text-navy">{item.action}</p>
@@ -186,12 +186,12 @@ function GestureRow({ item, index }: { item: (typeof gestures.items)[number]; in
 /** Navy section: sticky intro and the six gesture rows. */
 export function Gestures() {
   return (
-    <section id="gestures" aria-labelledby="gestures-title" className="bg-navy">
+    <section id="gestures" aria-labelledby="gestures-title" className="on-dark bg-navy text-white">
       <div className="mx-auto grid max-w-7xl gap-14 px-5 py-24 sm:px-8 sm:py-32 lg:grid-cols-[1fr_1.45fr] lg:gap-20">
         <Reveal className="lg:sticky lg:top-32 lg:self-start">
-          <Eyebrow>{gestures.eyebrow}</Eyebrow>
-          <h2 id="gestures-title" className="display text-[clamp(2.6rem,5.5vw,4.5rem)]">
-            {gestures.title}
+          <Eyebrow tone="dark">{gestures.eyebrow}</Eyebrow>
+          <h2 id="gestures-title" className="display text-[clamp(2.75rem,5.5vw,4.5rem)]">
+            <Emph text={gestures.title} />
           </h2>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-white/75">{gestures.body}</p>
         </Reveal>

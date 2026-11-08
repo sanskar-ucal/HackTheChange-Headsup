@@ -96,8 +96,6 @@ final class MockPermissions: PermissionsProviding {
     func requestSpeechRecognition() {}
     func openMicrophoneSettings() {}
     func openSpeechRecognitionSettings() {}
-    func requestCamera() {}
-    func openCameraSettings() {}
 }
 
 @MainActor

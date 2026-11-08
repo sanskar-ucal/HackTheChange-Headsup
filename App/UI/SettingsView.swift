@@ -13,11 +13,6 @@ struct SettingsView: View {
             Section("Pointer") { PointerSettingsSection(settings: $store.settings) }
             Section("Movement") { MovementSettingsSection(settings: $store.settings) }
             Section("Gestures") { GestureSettingsSection(settings: $store.settings, coordinator: coordinator) }
-            Section("Blink controls (beta)") {
-                BlinkSettingsSection(settings: $store.settings, telemetry: coordinator.blinkTelemetry,
-                                     retry: { coordinator.retryCamera() },
-                                     openCameraSettings: { coordinator.openCameraSettings() })
-            }
             Section("Scrolling") { ScrollSettingsSection(settings: $store.settings) }
             Section("Voice input") { VoiceSettingsSection(settings: $store.settings) }
             Section("Sound") {

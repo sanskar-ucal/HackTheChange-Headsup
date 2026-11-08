@@ -5,12 +5,14 @@ import { memo, useRef } from "react";
 import { useLoopClock, usePrefersReducedMotion } from "@/lib/hooks";
 import { BX, BY, DURATION, MATE_FRAME, MOVES, SQ, center, frameAt, type Color, type Frame, type PieceType } from "./chessScript";
 
-const NAVY = "#0B1A30";
-const PALE = "#E6EFFB";
+const NAVY = "#1D1C1A";
+const PALE = "#F3EFE6";
 const SKY = "#A8C6F0";
-const LINE = "#C9D8EE";
-const MUTED = "#46546A";
-const POINTER = "#33D959";
+const DARK_SQUARE = "#D9CDB8";
+const LINE = "#DDD6C8";
+const MUTED = "#5C5850";
+const POINTER_FILL = "#A8C6F0";
+const POINTER_RING = "#3E6FB0";
 
 /** Simple geometric chess pieces drawn in a 40 × 40 box. */
 function PieceShape({ type, color }: { type: PieceType; color: Color }) {
@@ -82,7 +84,7 @@ const Board = memo(function Board() {
   const squares = [];
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
-      squares.push(<rect key={`${r}${c}`} x={BX + c * SQ} y={BY + r * SQ} width={SQ} height={SQ} fill={(r + c) % 2 ? SKY : PALE} />);
+      squares.push(<rect key={`${r}${c}`} x={BX + c * SQ} y={BY + r * SQ} width={SQ} height={SQ} fill={(r + c) % 2 ? DARK_SQUARE : PALE} />);
     }
   }
   return (
@@ -149,7 +151,7 @@ function AirPodsPill({ head }: { head: Frame["head"] }) {
         {nod ? "Nod → click" : moving ? "Looking" : "Holding still"}
       </text>
       <g transform="translate(182 28)">
-        <circle r={14} fill={nod ? POINTER : "#1B3152"} />
+        <circle r={14} fill={nod ? SKY : "#3a3835"} />
         {nod ? (
           <path d="M-5 0 L-1 4 L6 -4" stroke={NAVY} strokeWidth={2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
         ) : (
@@ -194,13 +196,13 @@ function Scene({ f }: { f: Frame }) {
         <MoveList done={f.movesDone} turn={f.turn} mate={mate} />
 
         {f.ripple && (
-          <circle cx={f.ripple.at.x} cy={f.ripple.at.y} r={10 + 22 * f.ripple.p} fill="none" stroke={POINTER} strokeWidth={2.5 * (1 - f.ripple.p) + 0.5} opacity={0.9 * (1 - f.ripple.p)} />
+          <circle cx={f.ripple.at.x} cy={f.ripple.at.y} r={10 + 22 * f.ripple.p} fill="none" stroke={POINTER_RING} strokeWidth={2.5 * (1 - f.ripple.p) + 0.5} opacity={0.9 * (1 - f.ripple.p)} />
         )}
         <g transform={`translate(${f.cursor.x} ${f.cursor.y})`}>
           <circle r={12.5} fill="none" stroke={NAVY} strokeWidth={1.5} opacity={0.55} />
-          <circle r={11} fill={POINTER} opacity={0.3 + f.pressed * 0.25} />
-          <circle r={11} fill="none" stroke={POINTER} strokeWidth={2.4} />
-          <circle r={2.6} fill={POINTER} />
+          <circle r={11} fill={POINTER_FILL} opacity={0.7 + f.pressed * 0.3} />
+          <circle r={11} fill="none" stroke={POINTER_RING} strokeWidth={2.4} />
+          <circle r={2.6} fill={POINTER_RING} />
         </g>
 
         {f.toast > 0 && (
@@ -234,10 +236,10 @@ export function ChessDemo() {
         aria-label="Animated demo: HeadsUp moving chess pieces with head nods"
         style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
       >
-        <rect width={640} height={400} fill="#F4F8FD" />
-        <rect width={640} height={28} fill="#D6E3F6" />
+        <rect width={640} height={400} fill="#FBF9F4" />
+        <rect width={640} height={28} fill="#E9E4DA" />
         {[16, 32, 48].map((x) => (
-          <circle key={x} cx={x} cy={14} r={4.5} fill="#B5C8E4" />
+          <circle key={x} cx={x} cy={14} r={4.5} fill="#CFC8BA" />
         ))}
         <text x={320} y={18} textAnchor="middle" fontSize={11} fontWeight={600} fill={NAVY}>
           Chess

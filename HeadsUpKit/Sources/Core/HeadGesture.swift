@@ -7,8 +7,6 @@ public enum HeadGesture: String, Sendable, Equatable, Hashable, Codable, CaseIte
     case shake
     case tiltHoldLeft
     case tiltHoldRight
-    case doubleBlink
-    case tripleBlink
 }
 
 /// The kind of quick gesture a candidate may turn into.

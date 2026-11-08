@@ -21,7 +21,6 @@ extension AppCoordinator {
         public var clock: @MainActor () -> TimeInterval
         public var schedule: @MainActor (TimeInterval, @escaping @MainActor @Sendable () -> Void) -> Void
         public var updateSettings: @MainActor (HeadsUpSettings) -> Void
-        public var faceSource: FaceSampleSource?
 
         public init(
             motionSource: MotionSource, cursor: CursorController, scroll: ScrollController,
@@ -33,8 +32,7 @@ extension AppCoordinator {
             isAppActive: @escaping @MainActor () -> Bool,
             clock: @escaping @MainActor () -> TimeInterval,
             schedule: @escaping @MainActor (TimeInterval, @escaping @MainActor @Sendable () -> Void) -> Void,
-            updateSettings: @escaping @MainActor (HeadsUpSettings) -> Void,
-            faceSource: FaceSampleSource? = nil
+            updateSettings: @escaping @MainActor (HeadsUpSettings) -> Void
         ) {
             self.motionSource = motionSource
             self.cursor = cursor
@@ -53,7 +51,6 @@ extension AppCoordinator {
             self.clock = clock
             self.schedule = schedule
             self.updateSettings = updateSettings
-            self.faceSource = faceSource
         }
     }
 
@@ -72,8 +69,6 @@ extension AppCoordinator {
         modeRecognizer.config = DoubleNodConfig(settings: newSettings)
         deps.feedback.configure(volume: newSettings.feedbackVolume, muted: newSettings.feedbackMuted)
         deps.announcer.isEnabled = newSettings.speechEnabled
-        configureBlinks(newSettings)
-        updateCamera()
         updatePointerContext()
     }
 

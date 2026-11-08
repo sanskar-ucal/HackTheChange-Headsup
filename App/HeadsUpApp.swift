@@ -63,7 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func showOnboarding() {
-        windows.show(id: "onboarding", title: "Set up HeadsUp", size: CGSize(width: 500, height: 720)) {
+        windows.show(id: "onboarding", title: "Set up HeadsUp", size: CGSize(width: 500, height: 640)) {
             OnboardingView(coordinator: environment.coordinator, permissions: environment.permissions)
         }
     }

@@ -81,7 +81,6 @@ extension AppCoordinator {
     func enter(_ newState: AppState) {
         holdProgress = nil
         pointerFrozen = false
-        blinkHold = false
         frozenPoint = nil
         freezeUntil = nil
         releaseGlidePending = false
@@ -92,7 +91,6 @@ extension AppCoordinator {
         case .needsPermissions, .waitingForHeadphones: deps.keepAlive.stop()
         default: deps.keepAlive.start()
         }
-        updateCamera()
         updatePointerContext()
     }
 
@@ -121,6 +119,11 @@ extension AppCoordinator {
     func postAction(_ body: () -> Void) {
         guard state.allowsActions else { return }
         body()
+    }
+
+    /// Plays the click cue so the user can check the AirPods route and volume.
+    public func playTestSound() {
+        deps.feedback.play(.select)
     }
 
     func announce(_ text: String) {
