@@ -109,13 +109,21 @@ extension AppCoordinator {
         case .select:
             let point = blinkClickPoint ?? deps.cursor.currentPosition
             blinkClickPoint = nil
+            logBlink("double blink confirmed: click")
             perform(.doubleBlink, at: point)
         case .cancel:
             blinkClickPoint = nil
+            logBlink("triple blink confirmed: Escape")
             perform(.tripleBlink, at: deps.cursor.currentPosition)
         case nil:
             if blinkRecognizer.blinkCount == 0 { blinkClickPoint = nil }
         }
+    }
+
+    /// Blink actions appear in the same gesture log as nods and shakes.
+    private func logBlink(_ line: String) {
+        telemetry.appendGestureLog(line)
+        Self.log.debug("gesture \(line, privacy: .public)")
     }
 
     private func idleCameraStatus(_ source: BlinkSource) -> CameraStatus {

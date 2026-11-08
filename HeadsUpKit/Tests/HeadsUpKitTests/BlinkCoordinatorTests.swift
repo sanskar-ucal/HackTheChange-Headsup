@@ -109,6 +109,14 @@ final class BlinkCoordinatorTests: XCTestCase {
         XCTAssertEqual(h.coordinator.lastGesture, .tripleBlink)
     }
 
+    func testBlinkActionsAppearInTheGestureLog() {
+        let h = tracking()
+        h.feedEyes(2, closed: double)
+        XCTAssertEqual(h.coordinator.telemetry.gestureLog.last, "double blink confirmed: click")
+        h.feedEyes(3, closed: triple)
+        XCTAssertEqual(h.coordinator.telemetry.gestureLog.last, "triple blink confirmed: Escape")
+    }
+
     func testSingleAndOrdinaryBlinksDoNothing() {
         let h = tracking()
         h.cursor.clear()
