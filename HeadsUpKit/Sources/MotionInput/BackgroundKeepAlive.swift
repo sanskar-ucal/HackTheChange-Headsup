@@ -112,48 +112,6 @@ enum AudioEngineSupport {
         do { try engine.start() } catch { }
     }
 
-    /// The system's current default output device (the AirPods once they are the sound output).
-    static func defaultOutputDevice() -> AudioDeviceID? {
-        var device = AudioDeviceID(0)
-        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
-        var address = defaultOutputAddress
-        let status = AudioObjectGetPropertyData(
-            AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &device)
-        return status == noErr && device != 0 ? device : nil
-    }
-
-    /// Binds the engine's output unit to `device`; call while the engine is stopped.
-    static func route(_ engine: AVAudioEngine, to device: AudioDeviceID) {
-        guard let unit = engine.outputNode.audioUnit, currentDevice(of: engine) != device else { return }
-        var id = device
-        AudioUnitSetProperty(unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0,
-                             &id, UInt32(MemoryLayout<AudioDeviceID>.size))
-    }
-
-    static func currentDevice(of engine: AVAudioEngine) -> AudioDeviceID? {
-        guard let unit = engine.outputNode.audioUnit else { return nil }
-        var device = AudioDeviceID(0)
-        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
-        let status = AudioUnitGetProperty(unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0,
-                                          &device, &size)
-        return status == noErr && device != 0 ? device : nil
-    }
-
-    /// Calls `handler` on the main queue whenever the default output device changes.
-    static func observeDefaultOutputChanges(_ handler: @escaping @MainActor @Sendable () -> Void) {
-        var address = defaultOutputAddress
-        AudioObjectAddPropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &address, .main) { _, _ in
-            MainActor.assumeIsolated { handler() }
-        }
-    }
-
-    private static var defaultOutputAddress: AudioObjectPropertyAddress {
-        AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain)
-    }
-
     static func observeConfigurationChanges(
         of engine: AVAudioEngine,
         handler: @escaping @MainActor @Sendable () -> Void

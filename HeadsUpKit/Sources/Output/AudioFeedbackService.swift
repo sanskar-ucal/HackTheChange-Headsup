@@ -39,14 +39,9 @@ public final class AudioFeedbackService: FeedbackService {
         rebuild()
     }
 
-<<<<<<< HEAD
     /// Stops the engine, points it at the current default output (the AirPods when connected),
     /// reconnects the graph and starts again. A configuration or route change stops the engine
     /// and can leave stale connections, so a plain `start()` isn't enough.
-=======
-    /// Stops the engine, points it at the current default output (the AirPods when connected), reconnects the
-    /// graph and starts again. A config or route change stops the engine and can leave stale connections.
->>>>>>> cdc6d7146c27e1e0f65617d4b343c4e907f2d9cb
     private func rebuild() {
         engine.stop()
         if let device = AudioEngineSupport.defaultOutputDevice() {
@@ -69,11 +64,7 @@ public final class AudioFeedbackService: FeedbackService {
         self.muted = muted
     }
 
-<<<<<<< HEAD
     /// Out-of-range or zero volumes fall back to the default; "Mute cues" is the way to silence them.
-=======
-    /// Out-of-range or zero volumes fall back to the default, since "Mute cues" is the way to silence them.
->>>>>>> cdc6d7146c27e1e0f65617d4b343c4e907f2d9cb
     static func sanitizedVolume(_ volume: Double) -> Float {
         guard volume.isFinite, volume > 0 else { return Float(HeadsUpSettings.defaults.feedbackVolume) }
         return Float(min(volume, 1))
