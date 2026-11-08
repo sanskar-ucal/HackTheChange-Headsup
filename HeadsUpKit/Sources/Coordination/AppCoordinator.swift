@@ -28,6 +28,7 @@ public final class AppCoordinator: ObservableObject {
     @Published public internal(set) var pointerContext: PointerContext = .idle
     @Published public internal(set) var transcript = ""
     @Published public internal(set) var practice: PracticeSession?
+    @Published public internal(set) var cameraStatus: CameraStatus = .off
 
     public let telemetry: LiveTelemetry
     public let recorder: MotionRecorder
@@ -74,13 +75,20 @@ public final class AppCoordinator: ObservableObject {
     var voiceReviewStart: TimeInterval?
     var lastClickTime: TimeInterval = -.infinity
 
+    // Blink gestures (camera)
+    var blinkCaptureActive = false
+    var eyeClassifier: EyeOpennessClassifier
+    var blinkRecognizer: BlinkSequenceRecognizer
+    /// Pointer position when the second blink of a sequence completed: where a double blink clicks.
+    var blinkClickPoint: CGPoint?
+
     static let log = Logger(subsystem: "com.hackthechange.HeadsUp", category: "coordinator")
     static let signposter = OSSignposter(subsystem: "com.hackthechange.HeadsUp", category: .pointsOfInterest)
 
     private var streamTasks: [Task<Void, Never>] = []
     private var permissionTimer: Timer?
     private var diagnosticsTimer: Timer?
-    private var isStarted = false
+    private(set) var isStarted = false
 
     public init(dependencies: Dependencies, settings: HeadsUpSettings, recorder: MotionRecorder? = nil) {
         let savedCalibration = dependencies.calibrationStore.load()
@@ -101,6 +109,8 @@ public final class AppCoordinator: ObservableObject {
             toleranceDegrees: settings.autoRecenterToleranceDegrees, duration: settings.autoRecenterStillDuration)
         animator = PointerAnimator(stiffness: settings.pointerSpringStiffness)
         modeRecognizer = DoubleNodRecognizer(settings: settings)
+        eyeClassifier = EyeOpennessClassifier(configuration: .init(settings: settings))
+        blinkRecognizer = BlinkSequenceRecognizer(configuration: .init(settings: settings))
         dependencies.feedback.configure(volume: settings.feedbackVolume, muted: settings.feedbackMuted)
         dependencies.announcer.isEnabled = settings.speechEnabled
     }
@@ -123,9 +133,11 @@ public final class AppCoordinator: ObservableObject {
         source.start()
         startDiagnostics()
         refreshPermissions()
+        updateBlinkCapture()
     }
 
     public func stop() {
+        isStarted = false
         streamTasks.forEach { $0.cancel() }
         streamTasks.removeAll()
         permissionTimer?.invalidate()
@@ -134,7 +146,7 @@ public final class AppCoordinator: ObservableObject {
         deps.speech.cancel()
         deps.motionSource.stop()
         deps.keepAlive.stop()
-        isStarted = false
+        updateBlinkCapture()
     }
 
     // MARK: Permissions
