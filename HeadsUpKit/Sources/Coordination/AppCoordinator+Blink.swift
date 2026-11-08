@@ -70,6 +70,9 @@ extension AppCoordinator {
         guard blinkCaptureActive else { return }
         switch event {
         case let .status(status):
+            if status != cameraStatus {
+                Self.log.info("blink camera: \(status.displayName, privacy: .public)")
+            }
             cameraStatus = status
             if status != .running {
                 eyeClassifier.reset()
