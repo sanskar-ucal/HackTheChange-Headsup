@@ -105,29 +105,6 @@ cd HeadsUpKit && swift test
 
 [Build & run](#build--run) below covers running without AirPods and more.
 
-### 8. Troubleshooting
-
-| Problem | What to try |
-|---|---|
-| **The pointer doesn't move** | 1. Check that **Motion & Fitness** is allowed (step 4). 2. Check that the AirPods are connected *and* selected as the sound output. Take them out and put them back in if needed. 3. **Recenter**: tilt right and hold, or look at the middle of the screen and hold still. 4. Make sure HeadsUp isn't paused: tilt left and hold, or press ⌃⌥⌘H. |
-| **The pointer moves but clicks don't work** | The **Accessibility** permission is missing or stale. Remove HeadsUp from the Accessibility list and add it back (step 4), then reopen HeadsUp. |
-| **The pointer slowly drifts** | This is normal over time (head tracking isn't eye tracking). **Tilt right and hold** to recenter. If it keeps happening, run calibration again from the menu-bar icon. |
-| **Voice input doesn't start** | Allow **Microphone** and **Speech Recognition** (step 4). Voice only starts after you nod-click into a text or search field, and never in password fields. Some apps don't expose their fields to macOS, so voice can't start there. |
-| **The pointer is too fast or too slow** | Menu-bar icon → *Settings* → **Sensitivity** (see [Tuning](#tuning)). |
-
-### 9. Website
-
-The landing page lives in [`frontend/`](frontend/) and is a Next.js static export.
-
-```sh
-cd frontend && npm i && npm run dev     # http://localhost:3000
-npm run build                           # static site in frontend/out
-```
-
-The repository link is set once, as `GITHUB_URL` in [`frontend/site.config.ts`](frontend/site.config.ts). It's the site's only call to action.
-
-**Deploy to Vercel:** import the repo, set **Root Directory** to `frontend`, and keep the defaults (framework: Next.js). Nothing else needs configuring.
-
 ## Gesture cheat-sheet
 
 | Gesture | Action |
@@ -186,40 +163,7 @@ The setup window opens on first launch. You can reopen it from the menu-bar pane
 3. **AirPods**. Connect them and select them as the sound output.
 4. **Microphone + Speech Recognition** (optional). Only needed for voice input. Recognition runs on the Mac when supported.
 
-> **Rebuilding resets Accessibility.** The project is ad-hoc signed, so each rebuild can invalidate the grant. If clicks stop working, remove HeadsUp from the Accessibility list and add it again, or set `DEVELOPMENT_TEAM` in `project.yml`.
-
 The App Sandbox is **off**: posting input events and reading other apps' accessibility trees is impossible inside it.
-
-## Calibration & practice (hands-free)
-
-Calibration shows one large dot at a time (center, then the four corners 5% in from the edges, then the center again). Point your head at each dot and hold still for 1.5 s while the ring fills. Each capture is the median raw head pose over the last 0.75 s, and only counts if the head was still (under 5°/s); otherwise the ring restarts. Each side's range is fitted separately. If any side moved less than 5°, or the final center check is more than 3° from the first, calibration starts again. Calibration uses the raw sensor pose only, not smoothing, sensitivity or the pointer spring.
-
-If **Practice after calibration** is turned on (off by default), a **20-second practice** follows with three large circles: point at each one and nod. HeadsUp watches how you reach them and suggests a sensitivity:
-- If you overshoot a lot, it suggests calmer.
-- If you're slow to reach them, it suggests faster.
-
-**Nod** to accept the suggestion or **shake** to keep the current value.
-
-On later launches, hold still facing the screen for 2 s (or tilt right) to recenter.
-
-## Pointer styles
-
-**Settings → Pointer** offers five styles:
-- **Green circle** (default): the v1 halo
-- **Hand**: changes shape with what you're doing:
-  - open hand when idle
-  - pointing finger over buttons and links
-  - tap while clicking
-  - hand with arrows while scrolling
-  - mic badge while listening
-  - dimmed with a pause badge while paused
-- **Ring**
-- **Dot**
-- **Crosshair**
-
-You can also change the color, size (S–XL) and opacity, and turn the high-contrast outline on or off. The tilt-hold progress ring and the mode badges work with every style.
-
-**System arrow.** `CGDisplayHideCursor` only reliably hides the arrow while the calling app is frontmost, and HeadsUp almost never is. So by default the arrow stays visible, and the hand's fingertip (each shape's hotspot) is placed exactly on the arrow tip. *Hide system pointer (experimental)* tries to hide it anyway. Whether that works from the background must be checked on real hardware.
 
 ## Tuning
 
@@ -256,25 +200,6 @@ MotionSource → PoseFilter (One Euro) → PointerMapper (pure mapping × sensit
   - `awaitingRecenter` after a launch with a saved calibration, or after a reconnect
 
   Moves are posted only in `tracking` and `practicing`. Clicks, keys, scrolling and text only in `tracking`, `scrollMode`, `listening` and `voiceReview`.
-
-## Checking background delivery
-
-While active, HeadsUp keeps a `ProcessInfo` activity (so App Nap can't throttle it) and a silent `AVAudioEngine` stream (so the AirPods stay the audio route). Check **Settings → Advanced → Live readout → Background check** after switching apps, or run:
-
-```sh
-log stream --info --predicate 'subsystem == "com.hackthechange.HeadsUp"'
-```
-
-## Known limitations
-
-- **Accessibility coverage varies by app.** Voice-field detection depends on what each app exposes. Native AppKit apps, Safari and Chrome (after `AXManualAccessibility`) are good. Some custom-drawn or game UIs expose nothing. Setting a web field's value through AX doesn't always fire the page's input events. HeadsUp checks that the value stuck and otherwise types the text with key events.
-- **Speech focus detection** runs 150 ms after a HeadsUp click, plus on focus-change notifications within 1 s after a click. Fields that focus later are missed.
-- **AirPods microphone.** Using it switches Bluetooth to the low-quality call profile while listening, which also degrades audio cues and can disturb head tracking. So HeadsUp uses the **Mac's built-in microphone** by default (*Use Mac's built-in microphone*). Turn that off to use the current system input instead.
-- **System pointer hiding:** see Pointer styles above.
-- **With double nod turned on, single-nod clicks wait for a possible second nod**, about 0.4 s after the nod is recognized. It's off by default, so clicks are immediate.
-- **Scroll routing.** Scroll events go to the window under the pointer, kept just inside the screen edge so they never land on the Dock or menu bar. Apps that ignore pixel-precise synthetic scroll events may scroll in coarse steps.
-- **Absolute pointing drift.** Head orientation isn't gaze, and yaw drifts slowly. Recenter with tilt-right or by holding still.
-- Not included: dwell-click, drag, right-click, an on-screen keyboard, voice commands beyond dictation, profiles, signing and notarization.
 
 ## Tests
 
