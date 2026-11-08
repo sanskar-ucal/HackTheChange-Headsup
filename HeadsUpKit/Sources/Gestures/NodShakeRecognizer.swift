@@ -11,7 +11,7 @@ public struct NodShakeConfig: Sendable, Equatable {
     public var shakeMinDirectionChanges: Int
     public var cooldown: TimeInterval
 
-    public init(settings: Settings) {
+    public init(settings: HeadsUpSettings) {
         onsetRate = AngleMath.radians(settings.gestureOnsetRateDegPerSec)
         crossAxisMax = AngleMath.radians(settings.gestureCrossAxisMaxDegPerSec)
         nodWindow = settings.nodWindow

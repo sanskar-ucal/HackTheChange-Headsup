@@ -31,7 +31,7 @@ public final class AppCoordinator: ObservableObject {
 
     public let telemetry: LiveTelemetry
     public let recorder: MotionRecorder
-    public internal(set) var settings: Settings
+    public internal(set) var settings: HeadsUpSettings
     public internal(set) var calibration: Calibration?
 
     let deps: Dependencies
@@ -85,7 +85,7 @@ public final class AppCoordinator: ObservableObject {
         var point: CGPoint
     }
 
-    public init(dependencies: Dependencies, settings: Settings, recorder: MotionRecorder? = nil) {
+    public init(dependencies: Dependencies, settings: HeadsUpSettings, recorder: MotionRecorder? = nil) {
         let savedCalibration = dependencies.calibrationStore.load()
         var tiltRecognizer = TiltHoldRecognizer(config: TiltHoldConfig(settings: settings))
         tiltRecognizer.rollReference = savedCalibration?.neutralRoll ?? 0

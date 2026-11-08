@@ -115,7 +115,7 @@ final class MockFrameClock: FrameClock {
 @MainActor
 final class MockTargets: TargetProvider {
     var targets: [ClickTarget] = []
-    func requestTargets(near point: CGPoint, completion: @escaping @MainActor ([ClickTarget]) -> Void) {
+    func requestTargets(near point: CGPoint, completion: @escaping @MainActor @Sendable ([ClickTarget]) -> Void) {
         completion(targets)
     }
     func invalidate() {}

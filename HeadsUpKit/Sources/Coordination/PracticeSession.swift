@@ -32,7 +32,7 @@ public struct PracticeSession: Sendable, Equatable {
     /// Times the pointer entered and left a target without nodding on it.
     public private(set) var overshoots = 0
 
-    public init(settings: Settings) {
+    public init(settings: HeadsUpSettings) {
         radius = settings.practiceTargetRadius
         currentSensitivity = settings.sensitivity
         duration = settings.practiceDuration

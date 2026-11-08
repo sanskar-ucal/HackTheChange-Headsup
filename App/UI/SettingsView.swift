@@ -34,7 +34,7 @@ struct SettingsView: View {
 }
 
 struct MovementSettingsSection: View {
-    @Binding var settings: Settings
+    @Binding var settings: HeadsUpSettings
 
     /// One "Smoothing" control over the filter's minimum cutoff: 0 = 2 Hz (snappy) … 1 = 0.2 Hz (very smooth).
     private var smoothing: Binding<Double> {
@@ -66,7 +66,7 @@ struct MovementSettingsSection: View {
 }
 
 struct GestureSettingsSection: View {
-    @Binding var settings: Settings
+    @Binding var settings: HeadsUpSettings
     let coordinator: AppCoordinator
 
     var body: some View {
@@ -95,7 +95,7 @@ struct GestureSettingsSection: View {
 }
 
 struct ScrollSettingsSection: View {
-    @Binding var settings: Settings
+    @Binding var settings: HeadsUpSettings
 
     var body: some View {
         SliderRow(title: "Scroll speed", help: "Speed of edge-push and scroll-mode scrolling.",

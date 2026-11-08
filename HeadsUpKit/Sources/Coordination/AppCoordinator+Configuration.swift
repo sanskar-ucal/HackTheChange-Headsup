@@ -22,9 +22,9 @@ extension AppCoordinator {
         /// Seconds on the frame clock's timebase (`CACurrentMediaTime`).
         public var clock: @MainActor () -> TimeInterval
         /// Runs `work` after a delay on the main actor.
-        public var schedule: @MainActor (TimeInterval, @escaping @MainActor () -> Void) -> Void
+        public var schedule: @MainActor (TimeInterval, @escaping @MainActor @Sendable () -> Void) -> Void
         /// Persists a settings change made by the coordinator (accepted practice suggestion).
-        public var updateSettings: @MainActor (Settings) -> Void
+        public var updateSettings: @MainActor (HeadsUpSettings) -> Void
 
         public init(
             motionSource: MotionSource, cursor: CursorController, scroll: ScrollController,
@@ -35,8 +35,8 @@ extension AppCoordinator {
             screenGeometry: @escaping @MainActor () -> ScreenGeometry,
             isAppActive: @escaping @MainActor () -> Bool,
             clock: @escaping @MainActor () -> TimeInterval,
-            schedule: @escaping @MainActor (TimeInterval, @escaping @MainActor () -> Void) -> Void,
-            updateSettings: @escaping @MainActor (Settings) -> Void
+            schedule: @escaping @MainActor (TimeInterval, @escaping @MainActor @Sendable () -> Void) -> Void,
+            updateSettings: @escaping @MainActor (HeadsUpSettings) -> Void
         ) {
             self.motionSource = motionSource
             self.cursor = cursor
@@ -62,7 +62,7 @@ extension AppCoordinator {
     // MARK: Settings & screens
 
     /// Applies new settings live (sensitivity, smoothing, snapping… no recalibration).
-    public func apply(settings newSettings: Settings) {
+    public func apply(settings newSettings: HeadsUpSettings) {
         settings = newSettings
         poseFilter.configure(
             minCutoff: newSettings.filterMinCutoff, beta: newSettings.filterBeta, dCutoff: newSettings.filterDCutoff)

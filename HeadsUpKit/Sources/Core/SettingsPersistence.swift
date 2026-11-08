@@ -1,6 +1,6 @@
 import Foundation
 
-/// Reads and writes `Settings` as JSON in `UserDefaults`.
+/// Reads and writes `HeadsUpSettings` as JSON in `UserDefaults`.
 ///
 /// Stored values are merged over the defaults, so adding a new setting in a later version
 /// keeps the user's other values instead of resetting everything. v2 uses a new key so
@@ -16,24 +16,24 @@ public struct SettingsPersistence {
         self.key = key
     }
 
-    public func load() -> Settings {
+    public func load() -> HeadsUpSettings {
         guard let data = defaults.data(forKey: key) else { return .defaults }
         return Self.decodeMerged(data) ?? .defaults
     }
 
-    public func save(_ settings: Settings) {
+    public func save(_ settings: HeadsUpSettings) {
         guard let data = try? JSONEncoder().encode(settings) else { return }
         defaults.set(data, forKey: key)
     }
 
-    static func decodeMerged(_ data: Data) -> Settings? {
+    static func decodeMerged(_ data: Data) -> HeadsUpSettings? {
         guard
-            let defaultsData = try? JSONEncoder().encode(Settings.defaults),
+            let defaultsData = try? JSONEncoder().encode(HeadsUpSettings.defaults),
             var base = try? JSONSerialization.jsonObject(with: defaultsData) as? [String: Any],
             let stored = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         else { return nil }
         base.merge(stored) { _, storedValue in storedValue }
         guard let merged = try? JSONSerialization.data(withJSONObject: base) else { return nil }
-        return try? JSONDecoder().decode(Settings.self, from: merged)
+        return try? JSONDecoder().decode(HeadsUpSettings.self, from: merged)
     }
 }

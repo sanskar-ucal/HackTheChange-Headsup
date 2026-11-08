@@ -126,6 +126,7 @@ MotionSource → PoseFilter → PointerMapper (dead zone, precision, sensitivity
                                                  ScrollController · TextInserter · FeedbackService
 ```
 
+- Every tunable (gains, thresholds, timings, pointer appearance) lives in one `HeadsUpSettings` model, persisted to `UserDefaults` (key `HeadsUp.settings.v2`).
 - `HeadsUpKit/` holds all the logic: `Core`, `MotionInput`, `Processing`, `Gestures`, `Output`, `Permissions`, `PointerAppearance`, `Targeting`, `VoiceInput`, `Coordination`. `App/` is the SwiftUI and AppKit shell.
 - **Rendering is decoupled from the sensor rate.** Samples arrive at 25–50 Hz and only update the target. A display-synced `CADisplayLink` (`NSScreen.displayLink`, macOS 14) moves the real pointer with a critically damped spring (about 80 ms settle). It posts at most one move per frame and skips changes under 0.5 pt. Rollback and snap clicks glide in 80 ms, and resume/recenter glide in 150 ms. If display frames stop arriving, the sensor loop renders instead.
 - **Profiling.** `os_signpost` intervals named `pose` and `frame`, plus a `sample-to-cursor` event, appear under *Points of Interest* in Instruments. The live readout shows the latency.

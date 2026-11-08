@@ -20,7 +20,7 @@ public struct CalibrationSession: Sendable {
     private let targetInset: Double
     private let minRangeDegrees: Double
 
-    public init(settings: Settings) {
+    public init(settings: HeadsUpSettings) {
         dwell = StillnessDetector(
             toleranceDegrees: settings.calibrationDwellToleranceDegrees,
             duration: settings.calibrationDwellDuration)

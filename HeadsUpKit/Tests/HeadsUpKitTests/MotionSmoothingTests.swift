@@ -4,7 +4,7 @@ import XCTest
 
 final class PointerAnimatorTests: XCTestCase {
     func testSpringSettlesInAbout80Milliseconds() {
-        var animator = PointerAnimator(stiffness: Settings.defaults.pointerSpringStiffness)
+        var animator = PointerAnimator(stiffness: HeadsUpSettings.defaults.pointerSpringStiffness)
         animator.place(at: .zero)
         let target = CGPoint(x: 100, y: 0)
         var t = 0.0
@@ -59,7 +59,7 @@ final class ScrollCurveTests: XCTestCase {
     }
 
     func testEdgePushDirectionAndSettings() {
-        var settings = Settings.defaults
+        var settings = HeadsUpSettings.defaults
         XCTAssertGreaterThan(ScrollVelocity.edgePush(EdgeOvershoot(up: 8), settings: settings).vertical, 0)
         XCTAssertLessThan(ScrollVelocity.edgePush(EdgeOvershoot(down: 8), settings: settings).vertical, 0)
         XCTAssertEqual(ScrollVelocity.edgePush(EdgeOvershoot(left: 8), settings: settings).horizontal, 0,

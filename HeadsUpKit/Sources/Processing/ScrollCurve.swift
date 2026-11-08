@@ -29,7 +29,7 @@ public struct ScrollVelocity: Sendable, Equatable {
     public var isZero: Bool { vertical == 0 && horizontal == 0 }
 
     /// Edge-push scrolling from the mapper's overshoot.
-    public static func edgePush(_ overshoot: EdgeOvershoot, settings: Settings) -> ScrollVelocity {
+    public static func edgePush(_ overshoot: EdgeOvershoot, settings: HeadsUpSettings) -> ScrollVelocity {
         guard settings.edgeScrollEnabled else { return .zero }
         let maxSpeed = settings.scrollMaxSpeed * settings.scrollSpeed
         func speed(_ angle: Double) -> Double {

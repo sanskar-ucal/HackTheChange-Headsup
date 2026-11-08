@@ -19,7 +19,7 @@ public struct PoseFilter: Sendable {
         rollFilter = filter
     }
 
-    public init(settings: Settings) {
+    public init(settings: HeadsUpSettings) {
         self.init(minCutoff: settings.filterMinCutoff, beta: settings.filterBeta, dCutoff: settings.filterDCutoff)
     }
 

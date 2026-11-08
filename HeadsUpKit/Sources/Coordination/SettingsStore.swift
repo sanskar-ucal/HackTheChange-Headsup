@@ -4,7 +4,7 @@ import Foundation
 /// Observable, persisted settings for the UI. Every change is saved to `UserDefaults`.
 @MainActor
 public final class SettingsStore: ObservableObject {
-    @Published public var settings: Settings {
+    @Published public var settings: HeadsUpSettings {
         didSet { if settings != oldValue { persistence.save(settings) } }
     }
 

@@ -2,7 +2,7 @@ import Foundation
 
 /// Every tunable number in HeadsUp. Angles are degrees, durations seconds and distances
 /// points here (human-friendly for the Settings UI); components convert internally.
-public struct Settings: Codable, Equatable, Sendable {
+public struct HeadsUpSettings: Codable, Equatable, Sendable {
     // MARK: Pointing
     /// 0.25…1.5. At 1.0 the calibrated corners reach the screen corners; lower values
     /// need more head turn for the same pointer travel (calmer).
@@ -147,7 +147,7 @@ public struct Settings: Codable, Equatable, Sendable {
 
     public init() {}
 
-    public static let defaults = Settings()
+    public static let defaults = HeadsUpSettings()
 
     public var resolvedPointerColor: RGBAColor { pointerColor ?? pointerStyle.defaultColor }
 }

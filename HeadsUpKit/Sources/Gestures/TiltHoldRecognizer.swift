@@ -6,7 +6,7 @@ public struct TiltHoldConfig: Sendable, Equatable {
     public var holdDuration: TimeInterval
     public var releaseFraction: Double
 
-    public init(settings: Settings) {
+    public init(settings: HeadsUpSettings) {
         threshold = AngleMath.radians(settings.tiltThresholdDegrees)
         holdDuration = settings.tiltHoldDuration
         releaseFraction = settings.tiltReleaseFraction

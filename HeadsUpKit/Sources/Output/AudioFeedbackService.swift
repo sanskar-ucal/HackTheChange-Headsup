@@ -26,16 +26,21 @@ public final class AudioFeedbackService: FeedbackService {
         engine.attach(tickPlayer)
         engine.connect(tickPlayer, to: engine.mainMixerNode, format: format)
         player.volume = Float(volume)
-        configObserver = AudioEngineSupport.restartOnConfigurationChange(
-            engine, shouldRun: { true }, afterRestart: { [weak self] in
-                self?.player.play()
-                self?.tickPlayer.play()
-            })
+        configObserver = AudioEngineSupport.observeConfigurationChanges(of: engine) { [weak self] in
+            self?.restartAfterConfigurationChange()
+        }
         AudioEngineSupport.startIfNeeded(engine)
         if engine.isRunning {
             player.play()
             tickPlayer.play()
         }
+    }
+
+    private func restartAfterConfigurationChange() {
+        AudioEngineSupport.startIfNeeded(engine)
+        guard engine.isRunning else { return }
+        player.play()
+        tickPlayer.play()
     }
 
     public func configure(volume: Double, muted: Bool, tickVolume: Double) {

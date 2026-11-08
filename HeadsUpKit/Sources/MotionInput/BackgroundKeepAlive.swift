@@ -42,9 +42,14 @@ public final class SilentAudioKeepAlive: BackgroundKeepAlive {
         activity = ProcessInfo.processInfo.beginActivity(
             options: [.userInitiated, .latencyCritical],
             reason: "HeadsUp head tracking drives the cursor in the background")
-        configObserver = AudioEngineSupport.restartOnConfigurationChange(engine) { [weak self] in
-            self?.isRunning ?? false
+        configObserver = AudioEngineSupport.observeConfigurationChanges(of: engine) { [weak self] in
+            self?.restartAfterConfigurationChange()
         }
+        AudioEngineSupport.startIfNeeded(engine)
+    }
+
+    private func restartAfterConfigurationChange() {
+        guard isRunning else { return }
         AudioEngineSupport.startIfNeeded(engine)
     }
 
@@ -69,20 +74,18 @@ enum AudioEngineSupport {
     }
 
     /// The engine stops when the output device changes (AirPods connect/disconnect).
-    /// Restarts it while `shouldRun` returns true.
-    static func restartOnConfigurationChange(
-        _ engine: AVAudioEngine,
-        shouldRun: @escaping @MainActor () -> Bool,
-        afterRestart: @escaping @MainActor () -> Void = {}
+    /// Calls `handler` on the main actor for each change so the owner can restart its
+    /// engine. The engine is only the notification filter; it is not captured, so no
+    /// non-Sendable state crosses into the observer block.
+    static func observeConfigurationChanges(
+        of engine: AVAudioEngine,
+        handler: @escaping @MainActor @Sendable () -> Void
     ) -> NSObjectProtocol {
         NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
         ) { _ in
-            MainActor.assumeIsolated {
-                guard shouldRun() else { return }
-                startIfNeeded(engine)
-                afterRestart()
-            }
+            // queue: .main delivers on the main thread.
+            MainActor.assumeIsolated { handler() }
         }
     }
 }

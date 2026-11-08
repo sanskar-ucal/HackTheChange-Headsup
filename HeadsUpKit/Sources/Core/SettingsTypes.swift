@@ -66,7 +66,7 @@ public enum PointerSize: String, Codable, Sendable, CaseIterable {
     }
 }
 
-/// A color that can live in `Settings` (Codable, no AppKit dependency). Components 0…1.
+/// A color that can live in `HeadsUpSettings` (Codable, no AppKit dependency). Components 0…1.
 public struct RGBAColor: Codable, Sendable, Equatable, Hashable {
     public var red: Double
     public var green: Double

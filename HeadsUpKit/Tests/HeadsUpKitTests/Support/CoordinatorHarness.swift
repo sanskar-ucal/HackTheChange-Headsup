@@ -23,7 +23,7 @@ final class CoordinatorHarness {
     let coordinator: AppCoordinator
     private(set) var clock = 0.0
     private let now: Box<Double>
-    private let saved: Box<[Settings]>
+    private let saved: Box<[HeadsUpSettings]>
 
     /// 1000×800 display; ±20° yaw and ±15° pitch reach the edges at sensitivity 1.
     nonisolated static let geometry = ScreenGeometry(displays: [CGRect(x: 0, y: 0, width: 1000, height: 800)])
@@ -34,8 +34,8 @@ final class CoordinatorHarness {
 
     /// Settings for coordinator tests: sensitivity 1 and no precision damping so pointer
     /// positions are easy to predict (those features have their own unit tests).
-    nonisolated static var testSettings: Settings {
-        var settings = Settings.defaults
+    nonisolated static var testSettings: HeadsUpSettings {
+        var settings = HeadsUpSettings.defaults
         settings.permissionPollInterval = 0
         settings.practiceEnabled = false
         settings.sensitivity = 1
@@ -43,7 +43,7 @@ final class CoordinatorHarness {
         return settings
     }
 
-    init(savedCalibration: Calibration? = nil, permissionsReady: Bool = true, settings: Settings = testSettings) {
+    init(savedCalibration: Calibration? = nil, permissionsReady: Bool = true, settings: HeadsUpSettings = testSettings) {
         motion = MockMotionSource()
         cursor = MockCursor()
         scroll = MockScroll()
@@ -58,7 +58,7 @@ final class CoordinatorHarness {
         speech = MockSpeech()
         inserter = MockInserter()
         let now = Box(0.0)
-        let saved = Box([Settings]())
+        let saved = Box([HeadsUpSettings]())
         self.now = now
         self.saved = saved
         coordinator = AppCoordinator(
@@ -73,7 +73,7 @@ final class CoordinatorHarness {
     }
 
     /// Settings the coordinator asked to persist.
-    var settingsUpdates: [Settings] { saved.value }
+    var settingsUpdates: [HeadsUpSettings] { saved.value }
 
     func feed(_ duration: Double, yaw: [S.Component] = [], pitch: [S.Component] = [], roll: [S.Component] = []) {
         for var pose in S.trace(duration: duration, yaw: yaw, pitch: pitch, roll: roll) {
@@ -90,7 +90,7 @@ final class CoordinatorHarness {
     }
 
     /// Saved calibration → connect → auto-recenter by holding still → tracking.
-    static func tracking(settings: Settings = testSettings) -> CoordinatorHarness {
+    static func tracking(settings: HeadsUpSettings = testSettings) -> CoordinatorHarness {
         let harness = CoordinatorHarness(savedCalibration: calibration, settings: settings)
         harness.coordinator.refreshPermissions()
         harness.coordinator.handleConnection(.connected)

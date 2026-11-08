@@ -15,7 +15,7 @@ public struct ScrollModeRecognizer: Sendable {
     public var settleTime: TimeInterval
     private var settleUntil: TimeInterval?
 
-    public init(settings: Settings, entryPitch: Double? = nil) {
+    public init(settings: HeadsUpSettings, entryPitch: Double? = nil) {
         self.entryPitch = entryPitch
         neutralDegrees = settings.scrollModeNeutralDegrees
         rampDegrees = settings.scrollModeRampDegrees

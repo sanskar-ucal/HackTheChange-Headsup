@@ -30,7 +30,7 @@ public struct MagnetConfig: Sendable, Equatable {
         self.maxTargetFraction = maxTargetFraction
     }
 
-    public init(settings: Settings) {
+    public init(settings: HeadsUpSettings) {
         self.init(enabled: settings.snapEnabled, snapRadius: settings.snapRadius, strength: settings.magnetStrength,
                   stickiness: settings.snapStickiness, releaseFactor: settings.snapReleaseFactor,
                   releaseSpeed: settings.snapReleaseSpeedDegPerSec, engageMaxSpeed: settings.snapEngageMaxSpeedDegPerSec,

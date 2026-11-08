@@ -57,7 +57,7 @@ final class PointerAppearanceTests: XCTestCase {
     }
 
     func testDefaultsAreHandAndCalm() {
-        let settings = Settings.defaults
+        let settings = HeadsUpSettings.defaults
         XCTAssertEqual(settings.pointerStyle, .hand)
         XCTAssertEqual(settings.resolvedPointerColor, .white)
         XCTAssertEqual(settings.pointerSize, .large)
@@ -73,7 +73,7 @@ final class PointerAppearanceTests: XCTestCase {
     func testSettingsPersistenceRoundTrip() throws {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: "HeadsUpTests.\(UUID().uuidString)"))
         let persistence = SettingsPersistence(defaults: defaults)
-        var settings = Settings.defaults
+        var settings = HeadsUpSettings.defaults
         settings.pointerStyle = .ring
         settings.pointerColor = .blue
         settings.pointerSize = .small
@@ -94,6 +94,6 @@ final class PointerAppearanceTests: XCTestCase {
         let merged = try XCTUnwrap(SettingsPersistence.decodeMerged(partial))
         XCTAssertEqual(merged.sensitivity, 0.9)
         XCTAssertEqual(merged.pointerStyle, .dot)
-        XCTAssertEqual(merged.snapRadius, Settings.defaults.snapRadius)
+        XCTAssertEqual(merged.snapRadius, HeadsUpSettings.defaults.snapRadius)
     }
 }

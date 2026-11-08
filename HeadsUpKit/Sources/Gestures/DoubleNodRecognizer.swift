@@ -8,7 +8,7 @@ public struct DoubleNodConfig: Sendable, Equatable {
     public var wait: TimeInterval
     public var cooldown: TimeInterval
 
-    public init(settings: Settings) {
+    public init(settings: HeadsUpSettings) {
         enabled = settings.doubleNodEnabled
         window = settings.doubleNodWindow
         wait = settings.doubleNodWait
@@ -41,7 +41,7 @@ public struct DoubleNodRecognizer: GestureRecognizer {
         self.config = config
     }
 
-    public init(settings: Settings) {
+    public init(settings: HeadsUpSettings) {
         self.init(inner: NodShakeRecognizer(config: NodShakeConfig(settings: settings)),
                   config: DoubleNodConfig(settings: settings))
     }

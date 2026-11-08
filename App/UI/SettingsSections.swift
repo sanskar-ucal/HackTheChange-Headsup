@@ -2,7 +2,7 @@ import HeadsUpKit
 import SwiftUI
 
 struct PointerSettingsSection: View {
-    @Binding var settings: Settings
+    @Binding var settings: HeadsUpSettings
 
     private var color: Binding<Color> {
         Binding(get: { settings.resolvedPointerColor.color },
@@ -62,7 +62,7 @@ struct PointerSettingsSection: View {
 }
 
 struct VoiceSettingsSection: View {
-    @Binding var settings: Settings
+    @Binding var settings: HeadsUpSettings
 
     var body: some View {
         ChoiceRow(title: "Start voice input in", help: "After a nod-click lands in such a field, HeadsUp listens.",
@@ -79,7 +79,7 @@ struct VoiceSettingsSection: View {
 }
 
 struct SoundSettingsSection: View {
-    @Binding var settings: Settings
+    @Binding var settings: HeadsUpSettings
 
     var body: some View {
         SliderRow(title: "Cue volume", help: "Volume of the confirmation sounds in your AirPods.",
@@ -95,7 +95,7 @@ struct SoundSettingsSection: View {
 }
 
 struct AdvancedSettingsSection: View {
-    @Binding var settings: Settings
+    @Binding var settings: HeadsUpSettings
     let telemetry: LiveTelemetry
     let recorder: MotionRecorder
 

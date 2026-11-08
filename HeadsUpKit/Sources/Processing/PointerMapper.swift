@@ -61,7 +61,7 @@ public struct PointerMapper: Sendable {
             self.precisionRecoveryPerSec = precisionRecoveryPerSec
         }
 
-        public init(settings: Settings) {
+        public init(settings: HeadsUpSettings) {
             self.init(sensitivity: settings.sensitivity, deadZoneDegrees: settings.deadZoneDegrees,
                       deadZoneStartDegrees: settings.deadZoneStartDegrees, settleTime: settings.deadZoneSettleTime,
                       precisionSpeedDegPerSec: settings.precisionSpeedDegPerSec, precisionGain: settings.precisionGain,

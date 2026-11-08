@@ -43,7 +43,8 @@ public final class AccessibilityTargetProvider: TargetProvider {
         cache.invalidate()
     }
 
-    public func requestTargets(near point: CGPoint, completion: @escaping @MainActor ([ClickTarget]) -> Void) {
+    public func requestTargets(near point: CGPoint,
+                               completion: @escaping @MainActor @Sendable ([ClickTarget]) -> Void) {
         guard let app = NSWorkspace.shared.frontmostApplication,
               app.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
             completion([])
@@ -60,6 +61,8 @@ public final class AccessibilityTargetProvider: TargetProvider {
         let box = CGRect(x: point.x - searchRadius, y: point.y - searchRadius,
                          width: searchRadius * 2, height: searchRadius * 2)
         let limit = maxElements, timeout = messagingTimeout
+        // AXUIElements are created and used only inside the scan on this serial queue;
+        // the result is an array of plain Sendable values.
         queue.async { [weak self] in
             let targets = AccessibilityScanner.scan(pid: pid, box: box, limit: limit, timeout: timeout)
             Task { @MainActor in

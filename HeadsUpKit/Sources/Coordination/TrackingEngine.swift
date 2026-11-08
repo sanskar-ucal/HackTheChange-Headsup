@@ -42,7 +42,7 @@ public struct TrackingEngine: Sendable {
     private var snappedAtOnset: ClickTarget?
     private var lastTarget: CGPoint?
 
-    public init(calibration: Calibration, geometry: ScreenGeometry, settings: Settings) {
+    public init(calibration: Calibration, geometry: ScreenGeometry, settings: HeadsUpSettings) {
         mapper = PointerMapper(calibration: calibration, config: PointerMapper.Config(settings: settings))
         self.geometry = geometry
         recognizer = DoubleNodRecognizer(settings: settings)
@@ -54,7 +54,7 @@ public struct TrackingEngine: Sendable {
         lookback = settings.gestureOnsetLookback
     }
 
-    public mutating func apply(_ settings: Settings) {
+    public mutating func apply(_ settings: HeadsUpSettings) {
         mapper.config = PointerMapper.Config(settings: settings)
         recognizer.inner.config = NodShakeConfig(settings: settings)
         recognizer.config = DoubleNodConfig(settings: settings)

@@ -73,6 +73,8 @@ public final class AppleSpeechToTextService: SpeechToTextService {
 
     public func finish() {
         guard isActive else { return }
+        // Stop the tap first so `append` and `endAudio` never overlap (see RecognitionAudioSink).
+        engine?.inputNode.removeTap(onBus: 0)
         request?.endAudio()
         deliver(.final(latestText))
     }
@@ -123,15 +125,18 @@ public final class AppleSpeechToTextService: SpeechToTextService {
     /// The tap runs on the audio thread, so it's built outside the main actor.
     private nonisolated static func installTap(on input: AVAudioInputNode, feeding request: SFSpeechAudioBufferRecognitionRequest) {
         let format = input.outputFormat(forBus: 0)
+        let sink = RecognitionAudioSink(request)
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
-            request.append(buffer)
+            sink.append(buffer)
         }
     }
 
-    /// Recognition callbacks arrive on an arbitrary queue; hop to the main actor.
+    /// Recognition callbacks arrive on an arbitrary queue. Only plain Sendable values
+    /// (text, flags, error message) are copied out of the result before hopping to the
+    /// main actor; `SFSpeechRecognitionResult` itself never crosses.
     private nonisolated static func startTask(
         _ recognizer: SFSpeechRecognizer, request: SFSpeechAudioBufferRecognitionRequest,
-        onResult: @escaping @MainActor (String?, Bool, String?) -> Void
+        onResult: @escaping @MainActor @Sendable (String?, Bool, String?) -> Void
     ) -> SFSpeechRecognitionTask {
         recognizer.recognitionTask(with: request) { result, error in
             let text = result?.bestTranscription.formattedString
@@ -139,6 +144,25 @@ public final class AppleSpeechToTextService: SpeechToTextService {
             let message = error?.localizedDescription
             Task { @MainActor in onResult(text, isFinal, message) }
         }
+    }
+}
+
+/// Hands microphone buffers from the audio tap thread to the recognition request.
+///
+/// `@unchecked Sendable` because `SFSpeechAudioBufferRecognitionRequest` is not annotated,
+/// but appending buffers from an audio tap is its documented use: `append(_:)` is called
+/// only from the single tap thread, and the main actor only calls `endAudio()` after the
+/// tap is removed. No other state is shared. There is no Sendable alternative, since
+/// `AVAudioPCMBuffer` is not Sendable either.
+private final class RecognitionAudioSink: @unchecked Sendable {
+    private let request: SFSpeechAudioBufferRecognitionRequest
+
+    init(_ request: SFSpeechAudioBufferRecognitionRequest) {
+        self.request = request
+    }
+
+    func append(_ buffer: AVAudioPCMBuffer) {
+        request.append(buffer)
     }
 }
 

@@ -20,8 +20,9 @@ public struct ClickTarget: Sendable, Equatable {
 @MainActor
 public protocol TargetProvider: AnyObject {
     /// Looks up targets around `point` (global coordinates). The completion may run
-    /// synchronously (cache hit) or later; it is not called if a scan is already running.
-    func requestTargets(near point: CGPoint, completion: @escaping @MainActor ([ClickTarget]) -> Void)
+    /// synchronously (cache hit) or later on the main actor; it is not called if a scan is
+    /// already running. Only `Sendable` values (`ClickTarget`) cross back from the scan.
+    func requestTargets(near point: CGPoint, completion: @escaping @MainActor @Sendable ([ClickTarget]) -> Void)
     func invalidate()
 }
 

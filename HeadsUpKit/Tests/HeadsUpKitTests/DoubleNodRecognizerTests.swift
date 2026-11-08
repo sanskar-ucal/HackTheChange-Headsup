@@ -5,7 +5,7 @@ final class DoubleNodRecognizerTests: XCTestCase {
     typealias S = TraceSynth
 
     /// Runs the trace and returns (gesture, time of confirmation) pairs.
-    private func confirmations(_ trace: [HeadPose], settings: Settings = .defaults) -> [(HeadGesture, Double)] {
+    private func confirmations(_ trace: [HeadPose], settings: HeadsUpSettings = .defaults) -> [(HeadGesture, Double)] {
         var recognizer = DoubleNodRecognizer(settings: settings)
         var result: [(HeadGesture, Double)] = []
         for pose in trace {
@@ -40,7 +40,7 @@ final class DoubleNodRecognizerTests: XCTestCase {
     }
 
     func testDisabledDoubleNodClicksImmediately() {
-        var settings = Settings.defaults
+        var settings = HeadsUpSettings.defaults
         settings.doubleNodEnabled = false
         let trace = S.trace(duration: 3, pitch: [S.nod(at: 0.5)])
         var inner = NodShakeRecognizer(config: NodShakeConfig(settings: .defaults))
@@ -57,8 +57,8 @@ final class DoubleNodRecognizerTests: XCTestCase {
 }
 
 final class PracticeSessionTests: XCTestCase {
-    private var settings: Settings {
-        var s = Settings.defaults
+    private var settings: HeadsUpSettings {
+        var s = HeadsUpSettings.defaults
         s.sensitivity = 0.6
         return s
     }
