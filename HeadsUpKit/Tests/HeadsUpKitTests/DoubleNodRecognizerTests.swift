@@ -4,14 +4,12 @@ import XCTest
 final class DoubleNodRecognizerTests: XCTestCase {
     typealias S = TraceSynth
 
-    /// Double nod is off by default; these tests turn it on unless stated otherwise.
     private static var enabled: HeadsUpSettings {
         var settings = HeadsUpSettings.defaults
         settings.doubleNodEnabled = true
         return settings
     }
 
-    /// Runs the trace and returns (gesture, time of confirmation) pairs.
     private func confirmations(_ trace: [HeadPose], settings: HeadsUpSettings = enabled) -> [(HeadGesture, Double)] {
         var recognizer = DoubleNodRecognizer(settings: settings)
         var result: [(HeadGesture, Double)] = []
@@ -41,7 +39,6 @@ final class DoubleNodRecognizerTests: XCTestCase {
         var inner = NodShakeRecognizer(config: NodShakeConfig(settings: .defaults))
         let innerConfirm = trace.first { inner.process($0).confirmedGestures == [.nod] }?.timestamp ?? 0
         guard let single = confirmations(trace).first else { return XCTFail("no click") }
-        // The nod's own tail (~150 ms) plus the 250 ms wait for a second nod, at 25 Hz.
         XCTAssertLessThanOrEqual(single.1 - innerConfirm, 0.48)
         XCTAssertGreaterThanOrEqual(single.1 - innerConfirm, 0.25)
     }
@@ -92,7 +89,7 @@ final class PracticeSessionTests: XCTestCase {
         var session = PracticeSession(settings: settings)
         let target = session.targets[0].center
         var t = 0.0
-        for _ in 0..<6 {  // in and out of the first target without nodding
+        for _ in 0..<6 {
             session.update(pointer: target, aspect: 1.6, time: t)
             session.update(pointer: .center, aspect: 1.6, time: t + 0.1)
             t += 0.2

@@ -2,20 +2,14 @@ import Foundation
 
 /// Maps "how far past the neutral zone" to a scroll speed with an ease-in curve.
 public enum ScrollCurve {
-    /// - Parameters:
-    ///   - angle: degrees past the reference (edge or scroll-mode entry pose), ≥ 0.
-    ///   - deadZone: degrees that produce no scrolling.
-    ///   - ramp: degrees beyond the dead zone at which `maxSpeed` is reached.
-    /// - Returns: points per second, 0…maxSpeed.
+    /// - Parameters: - angle: degrees past the reference (edge or scroll-mode entry pose), ≥ 0. - deadZone.
     public static func speed(beyond angle: Double, deadZone: Double, ramp: Double, maxSpeed: Double) -> Double {
         let x = min(max((angle - deadZone) / max(ramp, 1e-6), 0), 1)
         return maxSpeed * x * x
     }
 }
 
-/// Scroll velocity in points per second. Positive `vertical` reveals content above
-/// (before the natural-direction setting is applied); positive `horizontal` reveals
-/// content to the left.
+/// Scroll velocity in points per second.
 public struct ScrollVelocity: Sendable, Equatable {
     public var vertical: Double
     public var horizontal: Double

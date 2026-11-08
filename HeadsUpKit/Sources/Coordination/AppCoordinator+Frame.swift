@@ -1,11 +1,9 @@
 import CoreGraphics
 import Foundation
 
-/// Display-rate rendering: spring/glide pointer motion, at most one move per frame,
-/// smooth pixel scrolling, and the pointer context.
+/// Display-rate rendering: spring/glide pointer motion, at most one move per frame, smooth pixel scrolling.
 extension AppCoordinator {
-    /// Called by the frame clock once per display refresh (`timestamp` on the
-    /// `CACurrentMediaTime` timebase).
+    /// Called by the frame clock once per display refresh (`timestamp` on the `CACurrentMediaTime` timebase).
     public func renderFrame(at timestamp: TimeInterval) {
         let interval = Self.signposter.beginInterval("frame")
         defer { Self.signposter.endInterval("frame", interval) }
@@ -18,7 +16,7 @@ extension AppCoordinator {
         if state.allowsPointerMotion, !pointerFrozen, let target = pointerTarget {
             if !animator.isGliding, let current = lastPostedPoint,
                hypot(target.x - current.x, target.y - current.y) < CGFloat(settings.pointerDeadZonePoints) {
-                animator.place(at: current)  // dead zone: hold still
+                animator.place(at: current)
             } else {
                 let step = animator.step(toward: target, now: timestamp, dt: dt)
                 let point = engine?.geometry.clamp(step.position) ?? step.position
@@ -46,16 +44,14 @@ extension AppCoordinator {
         updatePointerContext()
     }
 
-    /// If display frames stop arriving (no display link, display asleep), render from the
-    /// sensor loop instead so the pointer never stalls.
+    /// If display frames stop arriving (no display link, display asleep).
     func fallbackFrameIfStalled() {
         let now = deps.clock()
         if let last = lastFrameTime, now - last < 0.1 { return }
         renderFrame(at: now)
     }
 
-    /// Sample-to-cursor latency: time from the sensor sample that set the target to the
-    /// frame that posted the move. Visible in Instruments (Points of Interest).
+    /// Sample-to-cursor latency: time from the sensor sample that set the target to the frame that posted the move.
     private func reportLatency(at timestamp: TimeInterval) {
         guard let updated = targetUpdatedAt else { return }
         targetUpdatedAt = nil

@@ -1,7 +1,6 @@
 import Foundation
 
-/// The 1€ filter (Casiez et al., 2012): an adaptive low-pass filter whose cutoff rises with
-/// the signal's speed, giving low jitter when still and low lag when moving.
+/// The 1€ filter (Casiez et al., 2012): an adaptive low-pass filter whose cutoff rises with the signal's speed.
 public struct OneEuroFilter: Sendable {
     public var minCutoff: Double
     public var beta: Double

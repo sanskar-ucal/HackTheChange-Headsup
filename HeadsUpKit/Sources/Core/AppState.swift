@@ -7,17 +7,14 @@ public enum CalibrationStep: Int, Sendable, Equatable, Hashable, Codable, CaseIt
     case topRight
     case bottomRight
     case bottomLeft
-    /// The center again at the end: if the head pose drifted, calibration is redone.
     case centerCheck
 
-    /// The steps whose captures define the mapping (all but the final center check).
     public static let fitSteps: [CalibrationStep] = [.center, .topLeft, .topRight, .bottomRight, .bottomLeft]
 
     public var next: CalibrationStep? {
         CalibrationStep(rawValue: rawValue + 1)
     }
 
-    /// 1-based position for "step 2 of 5" style UI.
     public var number: Int { rawValue + 1 }
 
     public var prompt: String {
@@ -31,7 +28,6 @@ public enum CalibrationStep: Int, Sendable, Equatable, Hashable, Codable, CaseIt
         }
     }
 
-    /// Where the target dot is drawn, normalized 0…1 with a top-left origin.
     public func target(inset: Double) -> (x: Double, y: Double) {
         switch self {
         case .center, .centerCheck: return (0.5, 0.5)
@@ -54,30 +50,21 @@ public enum AppState: Sendable, Equatable {
     case needsPermissions
     case waitingForHeadphones
     case calibrating(CalibrationStep)
-    /// First-run practice targets after calibration.
     case practicing
-    /// A saved calibration exists but the yaw reference must be re-established
-    /// (tilt-hold right, or hold still for a moment).
     case awaitingRecenter
     case tracking
-    /// In-place scroll mode (double nod): the pointer is frozen and head pitch scrolls.
     case scrollMode
-    /// Voice input is listening for speech to put into the focused text field.
     case listening
-    /// Text was inserted: nod submits (Return), shake undoes, waiting keeps it.
     case voiceReview
     case paused
 
-    /// Pointer moves may be posted.
     public var allowsPointerMotion: Bool { self == .tracking || self == .practicing }
-    /// Clicks, key presses and scrolling may be posted.
     public var allowsActions: Bool {
         switch self {
         case .tracking, .scrollMode, .listening, .voiceReview: return true
         default: return false
         }
     }
-    /// Any synthetic event at all.
     public var allowsEventPosting: Bool { allowsPointerMotion || allowsActions }
 
     public var isCalibrating: Bool {

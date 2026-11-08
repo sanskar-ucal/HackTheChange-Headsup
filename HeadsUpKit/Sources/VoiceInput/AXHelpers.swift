@@ -38,7 +38,6 @@ enum AX {
         return settable.boolValue
     }
 
-    /// Element frame in global top-left coordinates (AXPosition is already top-left).
     static func frame(_ element: AXUIElement) -> CGRect? {
         guard let positionValue = attribute(element, kAXPositionAttribute),
               let sizeValue = attribute(element, kAXSizeAttribute),
@@ -54,8 +53,7 @@ enum AX {
     }
 }
 
-/// Chromium and Electron apps only build their accessibility tree for web content when
-/// asked. This turns it on for the frontmost app so search fields and links are visible.
+/// Chromium and Electron apps only build their accessibility tree for web content when asked.
 public enum AccessibilityEnabler {
     static let chromeFamily: Set<String> = [
         "com.google.Chrome", "com.google.Chrome.beta", "com.google.Chrome.canary",
@@ -71,8 +69,7 @@ public enum AccessibilityEnabler {
     }
 }
 
-/// Wraps an `AXObserver` for one app and a set of notifications, delivered on the main
-/// run loop.
+/// Wraps an `AXObserver` for one app and a set of notifications, delivered on the main run loop.
 @MainActor
 final class AXNotificationObserver {
     let pid: pid_t

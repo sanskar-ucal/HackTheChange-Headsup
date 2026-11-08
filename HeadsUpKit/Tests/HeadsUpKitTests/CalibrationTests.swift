@@ -4,7 +4,6 @@ import XCTest
 final class CalibrationTests: XCTestCase {
     private let r = AngleMath.radians
 
-    /// Corner poses for targets inset 5%: yaw ±18° and pitch ±13.5° → ±20° / ±15° ranges.
     private func captures(neutralYaw: Double = 0, leftScale: Double = 1) -> [CalibrationStep: CapturedPose] {
         [
             .center: CapturedPose(yaw: r(neutralYaw), pitch: 0, roll: r(2)),
@@ -65,10 +64,8 @@ final class CalibrationTests: XCTestCase {
         XCTAssertEqual(recentered.rangeDown, calibration.rangeDown)
     }
 
-    /// The six calibration targets (center, four corners, center check) in degrees.
     private let targets: [(Double, Double)] = [(0, 0), (-18, 13.5), (18, 13.5), (18, -13.5), (-18, -13.5), (0, 0)]
 
-    /// Feeds each target as a block of raw poses and collects the session's updates.
     private func run(_ blocks: [[HeadPose]]) -> [CalibrationSession.Update] {
         var session = CalibrationSession(settings: .defaults)
         var updates: [CalibrationSession.Update] = []
@@ -98,7 +95,6 @@ final class CalibrationTests: XCTestCase {
         }
         XCTAssertEqual(captured, [.center, .topLeft, .topRight, .bottomRight, .bottomLeft])
         guard case let .finished(result)? = updates.last else { return XCTFail("not finished: \(updates)") }
-        // Noisy fixture traces (±0.05°, ±2 °/s): medians give the expected ranges.
         XCTAssertEqual(AngleMath.degrees(result.rangeLeft), 20, accuracy: 0.2)
         XCTAssertEqual(AngleMath.degrees(result.rangeRight), 20, accuracy: 0.2)
         XCTAssertEqual(AngleMath.degrees(result.rangeUp), 15, accuracy: 0.2)
@@ -106,7 +102,6 @@ final class CalibrationTests: XCTestCase {
     }
 
     func testMovingCaptureIsRejected() {
-        // ±1° wobble at 2 Hz stays inside the 2° dwell tolerance but turns at ~12.6 °/s.
         let wobble = TraceSynth.Component(value: { sin(4 * .pi * $0) }, rate: { 4 * .pi * cos(4 * .pi * $0) })
         let updates = run([TraceSynth.trace(duration: 5, yaw: [wobble])])
         XCTAssertTrue(updates.contains(.rejected(.center)))
@@ -115,7 +110,7 @@ final class CalibrationTests: XCTestCase {
 
     func testCaptureIsTheMedianOfTheWindow() {
         var poses = (0..<19).map { HeadPose(timestamp: Double($0) * 0.04, yaw: 0, pitch: AngleMath.radians(2), roll: 0) }
-        poses[3].yaw = AngleMath.radians(1.5)  // outliers barely move a median
+        poses[3].yaw = AngleMath.radians(1.5)
         poses[9].yaw = AngleMath.radians(1.8)
         let median = CalibrationSession.median(of: poses)
         XCTAssertEqual(median.yaw, 0, accuracy: 1e-12)
@@ -127,7 +122,7 @@ final class CalibrationTests: XCTestCase {
 
     func testCenterDriftRedoesCalibration() {
         var blocks = targets.map { still(yaw: $0.0, pitch: $0.1) }
-        blocks[5] = still(yaw: 4, pitch: 0)  // the head drifted 4° by the final center check
+        blocks[5] = still(yaw: 4, pitch: 0)
         guard case let .failed(error)? = run(blocks).last,
               case let .centerDrifted(degrees) = error else { return XCTFail("expected a drift failure") }
         XCTAssertEqual(degrees, 4, accuracy: 0.1)
@@ -136,7 +131,7 @@ final class CalibrationTests: XCTestCase {
     func testSessionDoesNotCaptureNextTargetWithoutMoving() {
         var session = CalibrationSession(settings: .defaults)
         var captures = 0
-        for i in 0..<150 {  // 6 s staring at the center
+        for i in 0..<150 {
             let pose = HeadPose(timestamp: Double(i) * 0.04, yaw: 0, pitch: 0, roll: 0)
             if case .captured = session.process(pose) { captures += 1 }
         }

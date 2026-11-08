@@ -1,7 +1,6 @@
 import Foundation
 
-/// Angular velocity of the head, in radians per second, using HeadsUp's axis convention
-/// (see `HeadPose`).
+/// Angular velocity of the head, in radians per second, using HeadsUp's axis convention (see `HeadPose`).
 public struct RotationRate: Sendable, Equatable, Codable {
     public var pitch: Double
     public var yaw: Double
@@ -34,12 +33,6 @@ public struct Quaternion: Sendable, Equatable, Codable {
 }
 
 /// One head-orientation sample.
-///
-/// Axis convention used everywhere inside HeadsUp (sources convert into it):
-/// - `yaw`: positive = head turned to the user's **right**. Range ±π.
-/// - `pitch`: positive = looking **up**.
-/// - `roll`: positive = head tilted toward the **right** shoulder.
-/// Angles are radians; `timestamp` is seconds on a monotonic clock.
 public struct HeadPose: Sendable, Equatable {
     public var timestamp: TimeInterval
     public var yaw: Double

@@ -11,7 +11,7 @@ extension RGBAColor {
     }
 }
 
-/// Draws one pointer shape. Used by the pointer overlay and the Settings preview.
+/// Draws one pointer shape.
 struct PointerGlyphView: View {
     let shape: PointerShape
     let color: Color
@@ -44,7 +44,6 @@ struct PointerGlyphView: View {
                 .resizable()
                 .scaledToFit()
                 .foregroundStyle(color)
-                // Two tight shadows make a dark outline that reads on any background.
                 .shadow(color: outline, radius: 0.8)
                 .shadow(color: outline, radius: 0.8)
         case .circle:
@@ -74,6 +73,7 @@ struct PointerGlyphView: View {
     }
 }
 
+/// Four arms around an open center, so the click point stays visible.
 struct CrosshairShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()

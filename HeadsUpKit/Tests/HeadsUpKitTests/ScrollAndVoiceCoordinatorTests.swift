@@ -8,7 +8,7 @@ final class ScrollingCoordinatorTests: XCTestCase {
 
     func testEdgePushScrollsUpWhenLookingPastTheTop() {
         let h = CoordinatorHarness.tracking()
-        h.holdStill(1.5, pitch: 25)  // top edge at 15°; 10° overshoot
+        h.holdStill(1.5, pitch: 25)
         XCTAssertGreaterThan(h.scroll.totalDy, 100, "scrolls up (reveals content above)")
         XCTAssertEqual(h.cursor.moves.last?.y ?? -1, 0, accuracy: 1, "pointer pinned at the top")
         XCTAssertEqual(h.coordinator.pointerContext, .scrolling(.up))
@@ -16,7 +16,7 @@ final class ScrollingCoordinatorTests: XCTestCase {
 
     func testNoEdgeScrollJustInsideTheEngageZone() {
         let h = CoordinatorHarness.tracking()
-        h.holdStill(1.5, pitch: 17)  // 2° past the edge: below the 3° engage overshoot
+        h.holdStill(1.5, pitch: 17)
         XCTAssertEqual(h.scroll.calls, 0)
     }
 
@@ -38,7 +38,7 @@ final class ScrollingCoordinatorTests: XCTestCase {
         XCTAssertEqual(h.cursor.clicks, [], "a double nod does not click")
 
         let movesBefore = h.cursor.moves.count
-        h.holdStill(1.5, pitch: 12)  // look up relative to the settled pose
+        h.holdStill(1.5, pitch: 12)
         XCTAssertGreaterThan(h.scroll.totalDy, 100)
         XCTAssertEqual(h.cursor.moves.count, movesBefore, "pointer is frozen in scroll mode")
 
@@ -66,7 +66,7 @@ final class VoiceInputCoordinatorTests: XCTestCase {
                                                                                   subrole: "AXSearchField")) -> CoordinatorHarness {
         let h = CoordinatorHarness.tracking()
         h.focus.focused = info
-        h.feed(2, pitch: [S.nod(at: 0.3)])  // nod-click into the field
+        h.feed(2, pitch: [S.nod(at: 0.3)])
         return h
     }
 

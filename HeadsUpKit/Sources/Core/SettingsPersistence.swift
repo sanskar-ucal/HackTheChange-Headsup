@@ -1,10 +1,6 @@
 import Foundation
 
 /// Reads and writes `HeadsUpSettings` as JSON in `UserDefaults`.
-///
-/// Stored values are merged over the defaults, so adding a new setting in a later version
-/// keeps the user's other values instead of resetting everything. v2 uses a new key so
-/// v1 users get the calmer v2 pointing defaults.
 public struct SettingsPersistence {
     public static let defaultKey = "HeadsUp.settings.v2"
 
@@ -18,7 +14,17 @@ public struct SettingsPersistence {
 
     public func load() -> HeadsUpSettings {
         guard let data = defaults.data(forKey: key) else { return .defaults }
-        return Self.decodeMerged(data) ?? .defaults
+        return Self.sanitized(Self.decodeMerged(data) ?? .defaults)
+    }
+
+    /// Resets stored values that would silently disable audio cues.
+    static func sanitized(_ settings: HeadsUpSettings) -> HeadsUpSettings {
+        var settings = settings
+        let volume = settings.feedbackVolume
+        if !volume.isFinite || volume <= 0 || volume > 1 {
+            settings.feedbackVolume = HeadsUpSettings.defaults.feedbackVolume
+        }
+        return settings
     }
 
     public func save(_ settings: HeadsUpSettings) {

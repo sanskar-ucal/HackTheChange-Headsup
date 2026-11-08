@@ -13,7 +13,6 @@ final class NodShakeRecognizerTests: XCTestCase {
         let trace = S.trace(duration: 2, yaw: [S.noise(1)], pitch: [S.nod(at: 0.6), S.noise(2)], roll: [S.noise(3)])
         let events = recognizer.run(trace)
         XCTAssertEqual(events.confirmedGestures, [.nod])
-        // Onset is detected early in the nod, before the head reaches the bottom.
         guard case let .confirmed(_, onset)? = events.first(where: { if case .confirmed = $0 { return true }; return false })
         else { return XCTFail("no confirm") }
         XCTAssertEqual(onset, 0.72, accuracy: 0.05)
@@ -61,7 +60,6 @@ final class NodShakeRecognizerTests: XCTestCase {
 
     func testSmallNodBelowAmplitudeDoesNotTrigger() {
         var recognizer = makeRecognizer()
-        // Fast but tiny (5°): rates exceed onset, excursion doesn't reach 8°.
         let trace = S.trace(duration: 2, pitch: [S.nod(at: 0.5, amplitude: 5, period: 0.2)])
         XCTAssertEqual(recognizer.run(trace).confirmedGestures, [])
     }

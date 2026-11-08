@@ -1,5 +1,6 @@
 import Foundation
 
+/// Tilt-hold thresholds, in radians and seconds.
 public struct TiltHoldConfig: Sendable, Equatable {
     /// Radians.
     public var threshold: Double
@@ -13,9 +14,7 @@ public struct TiltHoldConfig: Sendable, Equatable {
     }
 }
 
-/// Fires `tiltHoldLeft` / `tiltHoldRight` when roll stays past the threshold for the hold
-/// duration, emitting progress along the way. Leaving the tilt early cancels. After firing,
-/// the head must come back toward upright before the next hold can start.
+/// Fires `tiltHoldLeft` / `tiltHoldRight` when roll stays past the threshold for the hold duration.
 public struct TiltHoldRecognizer: GestureRecognizer {
     public var config: TiltHoldConfig
     /// Roll of the neutral pose (radians); tilt is measured relative to it.

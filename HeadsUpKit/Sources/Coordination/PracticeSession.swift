@@ -1,18 +1,15 @@
 import Foundation
 
 /// First-run practice after calibration: three large targets to point at and nod on.
-/// Watches how the user reaches them and suggests a sensitivity. Pure logic.
 public struct PracticeSession: Sendable, Equatable {
     public struct Target: Sendable, Equatable {
         public var center: NormalizedPoint
         public var hit = false
-        /// Seconds from the start until the pointer first reached it.
         public var reachTime: Double?
     }
 
     public enum Phase: Sendable, Equatable {
         case running
-        /// Waiting for nod (accept) or shake (keep current).
         case suggesting(Double)
         case finished
     }
@@ -23,13 +20,11 @@ public struct PracticeSession: Sendable, Equatable {
         Target(center: NormalizedPoint(x: 0.5, y: 0.72)),
     ]
     public private(set) var phase: Phase = .running
-    /// Fraction of the screen height.
     public let radius: Double
     public let currentSensitivity: Double
     private let duration: TimeInterval
     private var startTime: TimeInterval?
     private var insideIndex: Int?
-    /// Times the pointer entered and left a target without nodding on it.
     public private(set) var overshoots = 0
 
     public init(settings: HeadsUpSettings) {
@@ -40,9 +35,6 @@ public struct PracticeSession: Sendable, Equatable {
 
     public var hits: Int { targets.filter(\.hit).count }
 
-    /// Feed the pointer position (normalized within the pointing rect) each sample.
-    /// `aspect` is width / height of that rect, so targets are round on screen.
-    /// Returns true if anything visible changed.
     @discardableResult
     public mutating func update(pointer: NormalizedPoint, aspect: Double, time: TimeInterval) -> Bool {
         guard phase == .running else { return false }
@@ -65,7 +57,6 @@ public struct PracticeSession: Sendable, Equatable {
         return changed
     }
 
-    /// A nod during practice. Returns true if it hit a target.
     public mutating func registerNod(at pointer: NormalizedPoint, aspect: Double) -> Bool {
         guard phase == .running, let index = targetIndex(at: pointer, aspect: aspect), !targets[index].hit else {
             return false
@@ -78,7 +69,6 @@ public struct PracticeSession: Sendable, Equatable {
         phase = .finished
     }
 
-    /// Many overshoots → calmer; slow to reach or missed targets → faster.
     public func suggestedSensitivity() -> Double {
         let reached = targets.compactMap(\.reachTime)
         let averageReach = reached.isEmpty ? .infinity : reached.reduce(0, +) / Double(reached.count)
