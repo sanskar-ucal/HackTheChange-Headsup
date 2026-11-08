@@ -53,6 +53,7 @@ HeadsUp needs two permissions, plus two optional ones for voice search. The setu
 | **Motion & Fitness** | Required | Lets HeadsUp read head movement from the AirPods | macOS asks the first time the AirPods send motion: click **Allow**. To change it later: *Privacy & Security* → **Motion & Fitness** → **HeadsUp** |
 | **Microphone** | Optional | Voice search: speak into search fields | macOS asks the first time voice input starts. Later: *Privacy & Security* → **Microphone** → **HeadsUp** |
 | **Speech Recognition** | Optional | Turns speech into text, on the Mac when supported | macOS asks together with the microphone. Later: *Privacy & Security* → **Speech Recognition** → **HeadsUp** |
+| **Camera** | Optional | Blink gestures: double blink clicks, triple blink presses Escape | macOS asks when you turn on **Settings → Blink gestures**. Later: *Privacy & Security* → **Camera** → **HeadsUp** |
 
 > **The toggle is on, but it still doesn't work?** This often happens after updating or replacing the app, because macOS remembers the old copy.
 > 1. Quit HeadsUp (menu-bar icon → **Quit**).
@@ -81,6 +82,8 @@ HeadsUp remembers the calibration. On later launches, look at the middle of the 
 | **Look past the top or bottom edge** | Scroll |
 | **Tilt left and hold** (1.5 s) | Pause / resume |
 | **Tilt right and hold** (1.5 s) | Recenter |
+| **Double blink** (optional, Mac camera) | Click |
+| **Triple blink** (optional, Mac camera) | Escape |
 | Caregiver keyboard: **⌃⌥⌘H** | Pause / resume |
 
 Full details: see the [Gesture cheat-sheet](#gesture-cheat-sheet) section below.
@@ -141,7 +144,11 @@ Set the repository URL once, as `GITHUB_URL` in [`frontend/site.config.ts`](fron
 | **Edge push** | Keep looking past the top or bottom edge (more than 3°) to scroll. Optionally left/right too. |
 | **Tilt left and hold** 1.5 s | Pause / resume. Works in every mode, including while listening. |
 | **Tilt right and hold** 1.5 s | Recenter: your current pose becomes "center". |
+| **Double blink** | Left click at the pointer, like a nod. Needs **Settings → Blink gestures** turned on (off by default). |
+| **Triple blink** | Press `Escape`, like a shake. A triple blink never clicks first. |
 | **⌃⌥⌘H** (caregiver keyboard) | Pause / resume |
+
+**Blink gestures (optional).** An alternative to nod and shake that uses the Mac's camera. Turn it on in **Settings → Blink gestures** and allow camera access. Blink twice (or three times) in quick succession: a double blink clicks after waiting about half a second for a possible third blink. Ordinary single blinks, eyes resting closed, and a second face in view never act. The camera runs only while blink gestures are on and HeadsUp is tracking; pausing turns it off. Video is analyzed on the Mac only to measure how open the eyes are: nothing is saved or sent, and faces are never identified. Blink actions work while tracking; in voice input and scroll mode use nod and shake.
 
 **Voice input.** Nod-click into a search field, and HeadsUp starts listening: a mic badge appears on the pointer and your words show in a bubble. Stop talking for 1.5 s, or nod, and the text is inserted. Then:
 - **nod** presses Return (runs the search)
