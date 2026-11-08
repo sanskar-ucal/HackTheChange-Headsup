@@ -24,6 +24,8 @@ extension AppCoordinator {
         public var schedule: @MainActor (TimeInterval, @escaping @MainActor @Sendable () -> Void) -> Void
         /// Persists a settings change made by the coordinator (accepted practice suggestion).
         public var updateSettings: @MainActor (HeadsUpSettings) -> Void
+        /// Camera eye tracking for blink gestures; nil on Macs/builds without it.
+        public var blinkSource: BlinkSource?
 
         public init(
             motionSource: MotionSource, cursor: CursorController, scroll: ScrollController,
@@ -35,7 +37,8 @@ extension AppCoordinator {
             isAppActive: @escaping @MainActor () -> Bool,
             clock: @escaping @MainActor () -> TimeInterval,
             schedule: @escaping @MainActor (TimeInterval, @escaping @MainActor @Sendable () -> Void) -> Void,
-            updateSettings: @escaping @MainActor (HeadsUpSettings) -> Void
+            updateSettings: @escaping @MainActor (HeadsUpSettings) -> Void,
+            blinkSource: BlinkSource? = nil
         ) {
             self.motionSource = motionSource
             self.cursor = cursor
@@ -54,6 +57,7 @@ extension AppCoordinator {
             self.clock = clock
             self.schedule = schedule
             self.updateSettings = updateSettings
+            self.blinkSource = blinkSource
         }
     }
 
@@ -61,6 +65,7 @@ extension AppCoordinator {
 
     /// Applies new settings live (sensitivity, smoothing… no recalibration).
     public func apply(settings newSettings: HeadsUpSettings) {
+        let wasBlinkEnabled = settings.blinkGesturesEnabled
         settings = newSettings
         poseFilter.configure(
             minCutoff: newSettings.filterMinCutoff, beta: newSettings.filterBeta, dCutoff: newSettings.filterDCutoff)
@@ -73,6 +78,7 @@ extension AppCoordinator {
         modeRecognizer.config = DoubleNodConfig(settings: newSettings)
         deps.feedback.configure(volume: newSettings.feedbackVolume, muted: newSettings.feedbackMuted)
         deps.announcer.isEnabled = newSettings.speechEnabled
+        applyBlinkSettings(newSettings, turningOn: !wasBlinkEnabled && newSettings.blinkGesturesEnabled)
         updatePointerContext()
     }
 

@@ -30,6 +30,8 @@
 	<string>HeadsUp reads head movement from your AirPods to move the pointer, click with a nod and cancel with a head shake.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>HeadsUp listens when you select a search field so you can speak your search instead of typing.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>When blink gestures are on, HeadsUp watches your eyes so a double blink clicks and a triple blink cancels. Video is analyzed on this Mac only; it is never saved or sent, and faces are never identified.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>HeadsUp turns your speech into text for search and text fields. Recognition runs on this Mac when supported.</string>
 	<key>NSHumanReadableCopyright</key>

@@ -63,6 +63,10 @@ struct MenuBarView: View {
             StatusRow(title: "Motion access", ok: coordinator.permissionStatus.motion != .denied
                       && coordinator.permissionStatus.motion != .restricted)
             StatusRow(title: "AirPods connected", ok: coordinator.isHeadphonesConnected)
+            if coordinator.cameraStatus != .off {
+                StatusRow(title: "Blink camera: \(coordinator.cameraStatus.displayName)",
+                          ok: !coordinator.cameraStatus.isProblem)
+            }
             if let gesture = coordinator.lastGesture {
                 Text("Last gesture: \(gesture.displayName)")
                     .font(.caption)
@@ -123,6 +127,8 @@ extension HeadGesture {
         case .shake: return "Shake (Escape)"
         case .tiltHoldLeft: return "Tilt left (pause)"
         case .tiltHoldRight: return "Tilt right (recenter)"
+        case .doubleBlink: return "Double blink (click)"
+        case .tripleBlink: return "Triple blink (Escape)"
         }
     }
 }

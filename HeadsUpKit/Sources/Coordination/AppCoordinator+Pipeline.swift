@@ -181,7 +181,7 @@ extension AppCoordinator {
         }
     }
 
-    private func perform(_ gesture: HeadGesture, at point: CGPoint) {
+    func perform(_ gesture: HeadGesture, at point: CGPoint) {
         lastGesture = gesture
         switch dispatcher.action(for: gesture) {
         case .click:
