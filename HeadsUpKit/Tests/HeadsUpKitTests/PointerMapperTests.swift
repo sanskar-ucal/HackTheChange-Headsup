@@ -86,7 +86,7 @@ final class PointerMapperTests: XCTestCase {
 
     func testYawWrapAroundAtPi() {
         // -179° is 2° to the right of 179°, not 358° to the left.
-        let point = mapper(neutralYaw: 179).map(HeadPose(timestamp: 0, yaw: r(-179), pitch: 0, roll: 0)).point
+        let point = mapper(neutralYaw: r(179)).map(HeadPose(timestamp: 0, yaw: r(-179), pitch: 0, roll: 0)).point
         XCTAssertEqual(point.x, 0.5 + 0.5 * 2 / 30, accuracy: 1e-9)
     }
 }
