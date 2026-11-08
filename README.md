@@ -2,6 +2,132 @@
 
 HeadsUp is a macOS menu-bar app for people who can't use their hands. It lets them control the Mac with **head movement only**, using AirPods with dynamic head tracking as the sensor. Point by turning your head, nod to click, look past the top or bottom edge to scroll, and speak into search fields. Every action is confirmed with a short sound in the AirPods.
 
+## Installation
+
+This guide is written so a caregiver or family member can set HeadsUp up in about 10 minutes. After setup, daily use is completely hands-free.
+
+**Steps:** [Requirements](#1-requirements) · [Download](#2-download) · [First open](#3-first-open-the-unidentified-developer-warning) · [Permissions](#4-permissions-step-by-step) · [Calibrate](#5-connect-airpods-and-calibrate) · [Gestures](#6-gesture-cheat-sheet) · [Build from source](#7-build-from-source) · [Troubleshooting](#8-troubleshooting) · [Website](#9-website)
+
+### 1. Requirements
+
+- **A Mac with macOS 14 Sonoma or later.** To check: Apple menu → *About This Mac*.
+- **AirPods that support head tracking:** AirPods Pro (any generation), AirPods (3rd generation or later), AirPods Max, or Beats with head tracking.
+- **The AirPods connected to this Mac and selected as its sound output.** Click *Control Center* (top right of the screen) → *Sound* and choose the AirPods.
+- **Head tracking / spatial audio support turned on.** In the same *Sound* menu, with the AirPods selected, make sure Spatial Audio isn't switched off. If you see **Head Tracked**, choose it. AirPods firmware updates install automatically while the AirPods charge near an iPhone or Mac.
+
+### 2. Download
+
+1. Go to the **[latest release](../../releases/latest)** (on the GitHub page: *Releases* on the right, then the newest one).
+2. Under **Assets**, click the **`.zip`** file for HeadsUp to download it.
+3. Open your **Downloads** folder and double-click the zip to unzip it. You now have **HeadsUp.app**.
+4. Drag **HeadsUp.app** into your **Applications** folder.
+
+### 3. First open (the "unidentified developer" warning)
+
+HeadsUp isn't signed with a paid Apple developer certificate yet. So the first time it opens, macOS shows a warning such as *"HeadsUp can't be opened because it is from an unidentified developer"* or *"Apple could not verify HeadsUp…"*. This is expected. You only need to fix it once:
+
+**Option A: right-click → Open**
+1. In *Applications*, **right-click** (or Control-click) **HeadsUp** and choose **Open**.
+2. In the dialog, click **Open**.
+
+**Option B: System Settings** (use this on newer macOS versions if Option A doesn't show an Open button)
+1. Double-click HeadsUp once and close the warning.
+2. Open Apple menu → *System Settings* → **Privacy & Security**.
+3. Scroll down to the *Security* section. Next to *"HeadsUp was blocked…"*, click **Open Anyway**, then confirm with your password or Touch ID.
+
+**Option C: Terminal** (if you're comfortable with it). This removes the download quarantine flag:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/HeadsUp.app
+```
+
+HeadsUp is a **menu-bar app** with no Dock icon. Look for its icon at the top right of the screen. The setup window opens automatically on first launch. You can reopen it any time from the menu-bar icon → **Setup & permissions…**.
+
+### 4. Permissions, step by step
+
+HeadsUp needs two permissions, plus two optional ones for voice search. The setup window has a button for each that opens the right place in System Settings.
+
+| Permission | Needed? | Why | Where to turn it on |
+|---|---|---|---|
+| **Accessibility** | Required | Controls the cursor: lets HeadsUp move the pointer, click, scroll and type in other apps | *System Settings* → *Privacy & Security* → **Accessibility** → turn on **HeadsUp**. If it isn't listed, click **+** and pick it from Applications. |
+| **Motion & Fitness** | Required | Lets HeadsUp read head movement from the AirPods | macOS asks the first time the AirPods send motion: click **Allow**. To change it later: *Privacy & Security* → **Motion & Fitness** → **HeadsUp** |
+| **Microphone** | Optional | Voice search: speak into search fields | macOS asks the first time voice input starts. Later: *Privacy & Security* → **Microphone** → **HeadsUp** |
+| **Speech Recognition** | Optional | Turns speech into text, on the Mac when supported | macOS asks together with the microphone. Later: *Privacy & Security* → **Speech Recognition** → **HeadsUp** |
+
+> **The toggle is on, but it still doesn't work?** This often happens after updating or replacing the app, because macOS remembers the old copy.
+> 1. Quit HeadsUp (menu-bar icon → **Quit**).
+> 2. In *Privacy & Security* → **Accessibility**, select **HeadsUp** and click **−** to remove it.
+> 3. Click **+**, choose **Applications → HeadsUp**, and turn it on again.
+> 4. Open HeadsUp again.
+>
+> The same steps fix Motion & Fitness, Microphone and Speech Recognition.
+
+### 5. Connect AirPods and calibrate
+
+1. Put the AirPods in, and check that they're the Mac's sound output.
+2. Open HeadsUp. It speaks short prompts through the AirPods to guide you. Follow them.
+3. **Calibration.** One large dot appears at a time: the center, then each of the four corners, then the center again. **Look at each dot and hold still until the ring around it fills** (about 1.5 seconds). If you move, the ring simply starts again.
+4. When it's done, HeadsUp says *"Calibration complete."* The pointer now follows your head.
+
+HeadsUp remembers the calibration. On later launches, look at the middle of the screen and hold still for 2 seconds (or tilt right and hold) to recenter.
+
+### 6. Gesture cheat sheet
+
+| Do this | What happens |
+|---|---|
+| **Look** around the screen | Moves the pointer |
+| **Nod** (small down-up) | Click. The pointer holds still while you nod |
+| **Shake** (left-right) | Escape / back. After voice input, undoes the text |
+| **Look past the top or bottom edge** | Scroll |
+| **Tilt left and hold** (1.5 s) | Pause / resume |
+| **Tilt right and hold** (1.5 s) | Recenter |
+| Caregiver keyboard: **⌃⌥⌘H** | Pause / resume |
+
+Full details: see the [Gesture cheat-sheet](#gesture-cheat-sheet) section below.
+
+### 7. Build from source
+
+For developers. Requires **Xcode 15 or later** and [Homebrew](https://brew.sh).
+
+```sh
+brew install xcodegen
+xcodegen generate          # run in the repo root; creates HeadsUp.xcodeproj from project.yml
+open HeadsUp.xcodeproj
+```
+
+In Xcode, select the **HeadsUp** scheme and click **Run** (⌘R).
+
+To run the logic tests (no AirPods needed):
+
+```sh
+cd HeadsUpKit && swift test
+```
+
+[Build & run](#build--run) below covers running without AirPods and more.
+
+### 8. Troubleshooting
+
+| Problem | What to try |
+|---|---|
+| **The pointer doesn't move** | 1. Check that **Motion & Fitness** is allowed (step 4). 2. Check that the AirPods are connected *and* selected as the sound output. Take them out and put them back in if needed. 3. **Recenter**: tilt right and hold, or look at the middle of the screen and hold still. 4. Make sure HeadsUp isn't paused: tilt left and hold, or press ⌃⌥⌘H. |
+| **The pointer moves but clicks don't work** | The **Accessibility** permission is missing or stale. Remove HeadsUp from the Accessibility list and add it back (step 4), then reopen HeadsUp. |
+| **The pointer slowly drifts** | This is normal over time (head tracking isn't eye tracking). **Tilt right and hold** to recenter. If it keeps happening, run calibration again from the menu-bar icon. |
+| **Voice input doesn't start** | Allow **Microphone** and **Speech Recognition** (step 4). Voice only starts after you nod-click into a text or search field, and never in password fields. Some apps don't expose their fields to macOS, so voice can't start there. |
+| **The pointer is too fast or too slow** | Menu-bar icon → *Settings* → **Sensitivity** (see [Tuning](#tuning)). |
+
+### 9. Website
+
+The landing page lives in [`frontend/`](frontend/) and is a Next.js static export.
+
+```sh
+cd frontend && npm i && npm run dev     # http://localhost:3000
+npm run build                           # static site in frontend/out
+```
+
+Set the repository URL once, as `GITHUB_URL` in [`frontend/site.config.ts`](frontend/site.config.ts). Every download button and GitHub link uses it. To show the demo video, add `frontend/public/demo.mp4` (and optionally `frontend/public/demo-poster.jpg`).
+
+**Deploy to Vercel:** import the repo, set **Root Directory** to `frontend`, and keep the defaults (framework: Next.js). Nothing else needs configuring.
+
 ## Gesture cheat-sheet
 
 | Gesture | Action |
