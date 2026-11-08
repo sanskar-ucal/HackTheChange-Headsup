@@ -87,7 +87,7 @@ Full details: see the [Gesture cheat-sheet](#gesture-cheat-sheet) section below.
 
 ### 7. Build from source
 
-For developers. Requires **Xcode 15 or later** and [Homebrew](https://brew.sh).
+For developers. Requires **Xcode 15.3 or later** (Swift 5.10, needed by `HeadsUpKit/Package.swift`) and [Homebrew](https://brew.sh).
 
 ```sh
 brew install xcodegen
@@ -114,6 +114,8 @@ cd HeadsUpKit && swift test
 | **The pointer slowly drifts** | This is normal over time (head tracking isn't eye tracking). **Tilt right and hold** to recenter. If it keeps happening, run calibration again from the menu-bar icon. |
 | **Voice input doesn't start** | Allow **Microphone** and **Speech Recognition** (step 4). Voice only starts after you nod-click into a text or search field, and never in password fields. Some apps don't expose their fields to macOS, so voice can't start there. |
 | **The pointer is too fast or too slow** | Menu-bar icon → *Settings* → **Sensitivity** (see [Tuning](#tuning)). |
+| **No confirmation sounds** | Check that the AirPods are the sound output, then menu-bar icon → *Settings* → *Sound*: turn **Mute cues** off and raise **Cue volume**. |
+| **Permissions stop working after every rebuild** (developers) | Source builds are ad-hoc signed, so macOS treats each build as a new app. Clear the stale grant with `tccutil reset Accessibility com.hackthechange.HeadsUp`, allow it again, or set `DEVELOPMENT_TEAM` in `project.yml` for a stable signature. |
 
 ### 9. Website
 
@@ -246,7 +248,7 @@ MotionSource → PoseFilter (One Euro) → PointerMapper (pure mapping × sensit
 ```
 
 - Every tunable (gains, thresholds, timings, pointer appearance) lives in one `HeadsUpSettings` model, persisted to `UserDefaults` (key `HeadsUp.settings.v2`).
-- `HeadsUpKit/` holds all the logic: `Core`, `MotionInput`, `Processing`, `Gestures`, `Output`, `Permissions`, `PointerAppearance`, `Targeting`, `VoiceInput`, `Coordination`. `App/` is the SwiftUI and AppKit shell.
+- `HeadsUpKit/` holds all the logic: `Core`, `MotionInput`, `Processing`, `Gestures`, `Output`, `Permissions`, `PointerAppearance`, `VoiceInput`, `Coordination`. `App/` is the SwiftUI and AppKit shell.
 - **Rendering is decoupled from the sensor rate.** Samples arrive at 25–50 Hz and only update the target. A display-synced `CADisplayLink` (`NSScreen.displayLink`, macOS 14) moves the real pointer with a critically damped spring (about 40 ms settle, no overshoot). It posts at most one move per frame, and doesn't move at all when the target is under 3 pt from the cursor (dead zone). Resume/recenter glide in 150 ms.
 - **Nods never drag the pointer.** Gestures are recognized from the raw sensor pose. Fast up/down head movement holds the pointer even before the nod threshold is reached, and the moment a nod starts the cursor freezes (target, spring and edge scrolling). A confirmed nod clicks exactly at the frozen spot, holds still for 400 ms, then glides (120 ms) to the head-pointed position, with the smoothing filter re-seeded so the nod's own dip never shows. A rejected nod releases the same way, without a jump. If display frames stop arriving, the sensor loop renders instead.
 - **Profiling.** `os_signpost` intervals named `pose` and `frame`, plus a `sample-to-cursor` event, appear under *Points of Interest* in Instruments. The live readout shows the latency.
