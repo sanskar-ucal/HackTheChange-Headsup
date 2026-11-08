@@ -1,8 +1,7 @@
 import Carbon.HIToolbox
 import Foundation
 
-/// A system-wide keyboard shortcut via Carbon's `RegisterEventHotKey`, which works while
-/// other apps are frontmost and needs no extra permission. Defaults to ⌃⌥⌘H.
+/// A system-wide keyboard shortcut via Carbon's `RegisterEventHotKey`.
 @MainActor
 final class GlobalHotKey {
     private let action: @MainActor () -> Void
@@ -18,12 +17,11 @@ final class GlobalHotKey {
         InstallEventHandler(GetApplicationEventTarget(), { _, _, userData in
             guard let userData else { return OSStatus(eventNotHandledErr) }
             let hotKey = Unmanaged<GlobalHotKey>.fromOpaque(userData).takeUnretainedValue()
-            // Carbon delivers application events on the main thread.
             MainActor.assumeIsolated { hotKey.action() }
             return noErr
         }, 1, &eventType, context, &handlerRef)
 
-        let id = EventHotKeyID(signature: OSType(0x4855_5550), id: 1)  // 'HUUP'
+        let id = EventHotKeyID(signature: OSType(0x4855_5550), id: 1)
         RegisterEventHotKey(UInt32(keyCode), UInt32(modifiers), id, GetApplicationEventTarget(), 0, &hotKeyRef)
     }
 

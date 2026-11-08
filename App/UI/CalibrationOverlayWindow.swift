@@ -3,8 +3,7 @@ import Combine
 import HeadsUpKit
 import SwiftUI
 
-/// Shows a full-screen, click-through overlay with the calibration targets while the
-/// coordinator is calibrating.
+/// Shows a full-screen, click-through overlay with the calibration targets while the coordinator is calibrating.
 @MainActor
 final class CalibrationOverlayController {
     private let coordinator: AppCoordinator
@@ -48,6 +47,7 @@ final class CalibrationOverlayController {
     }
 }
 
+/// Full-screen calibration target: one dot with a ring that fills while the head holds still.
 struct CalibrationOverlayView: View {
     @ObservedObject var coordinator: AppCoordinator
 

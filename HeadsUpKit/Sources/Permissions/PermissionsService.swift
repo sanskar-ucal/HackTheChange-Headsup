@@ -5,6 +5,7 @@ import CoreMotion
 import Foundation
 import Speech
 
+/// A privacy permission's state, independent of the framework that reports it.
 public enum AuthorizationState: String, Sendable, Equatable {
     case notDetermined
     case restricted
@@ -14,12 +15,11 @@ public enum AuthorizationState: String, Sendable, Equatable {
 
 public typealias MotionAuthorization = AuthorizationState
 
+/// Snapshot of every permission HeadsUp uses.
 public struct PermissionStatus: Sendable, Equatable {
     public var accessibilityTrusted: Bool
     public var motion: MotionAuthorization
-    /// Whether this Mac supports headphone motion at all (`isDeviceMotionAvailable`).
     public var motionHardwareAvailable: Bool
-    /// Voice input only; not required for head pointing.
     public var microphone: AuthorizationState
     public var speechRecognition: AuthorizationState
 
@@ -34,8 +34,6 @@ public struct PermissionStatus: Sendable, Equatable {
 
     public var isVoiceInputReady: Bool { microphone == .authorized && speechRecognition == .authorized }
 
-    /// Motion `notDetermined` counts as ready: the system prompt appears when motion
-    /// updates start, and HeadsUp starts them as soon as it launches.
     public var isReady: Bool {
         accessibilityTrusted && motion != .denied && motion != .restricted
     }
@@ -45,7 +43,6 @@ public struct PermissionStatus: Sendable, Equatable {
 @MainActor
 public protocol PermissionsProviding: AnyObject {
     func currentStatus() -> PermissionStatus
-    /// Shows the system "allow accessibility" prompt (once per app identity).
     func promptForAccessibility()
     func openAccessibilitySettings()
     func openMotionSettings()
@@ -55,6 +52,7 @@ public protocol PermissionsProviding: AnyObject {
     func openSpeechRecognitionSettings()
 }
 
+/// Reads and requests permissions from macOS.
 @MainActor
 public final class SystemPermissionsService: PermissionsProviding {
     private let motionManager = CMHeadphoneMotionManager()
@@ -71,7 +69,6 @@ public final class SystemPermissionsService: PermissionsProviding {
     }
 
     public func promptForAccessibility() {
-        // "AXTrustedCheckOptionPrompt" is the value of kAXTrustedCheckOptionPrompt.
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
     }
@@ -81,7 +78,6 @@ public final class SystemPermissionsService: PermissionsProviding {
     }
 
     public func openMotionSettings() {
-        // macOS has no dedicated deep link for headphone motion; open Privacy & Security.
         open("x-apple.systempreferences:com.apple.preference.security?Privacy")
     }
 
@@ -117,7 +113,11 @@ public final class SystemPermissionsService: PermissionsProviding {
     }
 
     private static func microphoneAuthorization() -> AuthorizationState {
-        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        captureAuthorization(for: .audio)
+    }
+
+    private static func captureAuthorization(for media: AVMediaType) -> AuthorizationState {
+        switch AVCaptureDevice.authorizationStatus(for: media) {
         case .authorized: return .authorized
         case .denied: return .denied
         case .restricted: return .restricted

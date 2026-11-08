@@ -17,7 +17,11 @@ final class FeedbackCueTests: XCTestCase {
         XCTAssertEqual(cues(h) { h.feed(1.5, pitch: [S.nod(at: 0.3)]) }, [.select])
     }
 
+<<<<<<< HEAD
     func testShakeEscapePlaysCancel() {
+=======
+    func testShakePlaysCancel() {
+>>>>>>> cdc6d7146c27e1e0f65617d4b343c4e907f2d9cb
         let h = CoordinatorHarness.tracking()
         XCTAssertEqual(cues(h) { h.feed(2, yaw: [S.shake(at: 0.5)]) }, [.cancel])
     }
@@ -33,6 +37,7 @@ final class FeedbackCueTests: XCTestCase {
         XCTAssertEqual(cues(h) { h.coordinator.recenter() }, [.recentered])
     }
 
+<<<<<<< HEAD
     func testScrollModeOnAndOffPlayCues() {
         var settings = CoordinatorHarness.testSettings
         settings.doubleNodEnabled = true
@@ -43,6 +48,8 @@ final class FeedbackCueTests: XCTestCase {
         XCTAssertEqual(cues(h) { h.coordinator.exitScrollMode() }, [.scrollOff])
     }
 
+=======
+>>>>>>> cdc6d7146c27e1e0f65617d4b343c4e907f2d9cb
     func testListeningPlaysStartCue() {
         let h = CoordinatorHarness.tracking()
         h.focus.focused = FocusedElementInfo(role: "AXTextField", subrole: "AXSearchField")
@@ -57,6 +64,7 @@ final class FeedbackCueTests: XCTestCase {
         XCTAssertEqual(cues(h) { h.coordinator.playTestSound() }, [.select])
     }
 
+<<<<<<< HEAD
     func testDefaultsAndStoredInvalidVolumeAreReset() {
         XCTAssertGreaterThan(HeadsUpSettings.defaults.feedbackVolume, 0)
         XCTAssertFalse(HeadsUpSettings.defaults.feedbackMuted)
@@ -67,5 +75,17 @@ final class FeedbackCueTests: XCTestCase {
         }
         settings.feedbackVolume = 0.3
         XCTAssertEqual(SettingsPersistence.sanitized(settings).feedbackVolume, 0.3)
+=======
+    func testStoredZeroVolumeIsReset() {
+        var settings = HeadsUpSettings.defaults
+        settings.feedbackVolume = 0
+        XCTAssertEqual(SettingsPersistence.sanitized(settings).feedbackVolume, HeadsUpSettings.defaults.feedbackVolume)
+        settings.feedbackVolume = .nan
+        XCTAssertEqual(SettingsPersistence.sanitized(settings).feedbackVolume, HeadsUpSettings.defaults.feedbackVolume)
+        settings.feedbackVolume = 0.3
+        XCTAssertEqual(SettingsPersistence.sanitized(settings).feedbackVolume, 0.3)
+        XCTAssertGreaterThan(HeadsUpSettings.defaults.feedbackVolume, 0)
+        XCTAssertFalse(HeadsUpSettings.defaults.feedbackMuted)
+>>>>>>> cdc6d7146c27e1e0f65617d4b343c4e907f2d9cb
     }
 }

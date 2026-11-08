@@ -1,10 +1,6 @@
 import Foundation
 
 /// Reads and writes `HeadsUpSettings` as JSON in `UserDefaults`.
-///
-/// Stored values are merged over the defaults, so adding a new setting in a later version
-/// keeps the user's other values instead of resetting everything. v2 uses a new key so
-/// v1 users get the calmer v2 pointing defaults.
 public struct SettingsPersistence {
     public static let defaultKey = "HeadsUp.settings.v2"
 

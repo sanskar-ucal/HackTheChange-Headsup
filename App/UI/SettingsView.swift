@@ -2,7 +2,6 @@ import HeadsUpKit
 import SwiftUI
 
 /// Settings, organized for quick tuning and fully operable with head pointer + nod.
-/// Every change is saved immediately and applied live (no recalibration needed).
 struct SettingsView: View {
     @ObservedObject var store: SettingsStore
     let telemetry: LiveTelemetry
@@ -35,10 +34,10 @@ struct SettingsView: View {
     }
 }
 
+/// Sensitivity, smoothing, dead zone and display span.
 struct MovementSettingsSection: View {
     @Binding var settings: HeadsUpSettings
 
-    /// One "Smoothing" control over the filter's minimum cutoff: 0 = 2 Hz (snappy) … 1 = 0.2 Hz (very smooth).
     private var smoothing: Binding<Double> {
         Binding(
             get: { min(max(log10(2 / max(settings.filterMinCutoff, 0.01)), 0), 1) },
@@ -59,6 +58,7 @@ struct MovementSettingsSection: View {
     }
 }
 
+/// Nod, shake and tilt thresholds, plus recalibration.
 struct GestureSettingsSection: View {
     @Binding var settings: HeadsUpSettings
     let coordinator: AppCoordinator
@@ -90,6 +90,7 @@ struct GestureSettingsSection: View {
     }
 }
 
+/// Edge-push scrolling speed, direction and distance.
 struct ScrollSettingsSection: View {
     @Binding var settings: HeadsUpSettings
 

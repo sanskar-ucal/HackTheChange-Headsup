@@ -1,9 +1,7 @@
 import Foundation
 @testable import HeadsUpKit
 
-/// Synthesizes 25 Hz head-pose traces from simple motion components. Mirrors
-/// `scripts/generate_fixtures.py`, which writes the CSVs in `Fixtures/`.
-/// Components are in degrees and degrees/second.
+/// Synthesizes 25 Hz head-pose traces from simple motion components.
 enum TraceSynth {
     static let rate = 25.0
 
@@ -38,12 +36,10 @@ enum TraceSynth {
         Component(value: { _ in v }, rate: { _ in 0 })
     }
 
-    /// Constant-velocity pan starting at t = 0.
     static func pan(_ degPerSec: Double) -> Component {
         Component(value: { degPerSec * $0 }, rate: { _ in degPerSec })
     }
 
-    /// Down-then-up nod.
     static func nod(at start: Double, amplitude: Double = 15, period: Double = 0.6) -> Component {
         Component(
             value: { t in
@@ -56,7 +52,6 @@ enum TraceSynth {
             })
     }
 
-    /// Right-left-back shake (one full sine cycle).
     static func shake(at start: Double, amplitude: Double = 15, period: Double = 0.6) -> Component {
         Component(
             value: { t in
@@ -69,7 +64,6 @@ enum TraceSynth {
             })
     }
 
-    /// Holds `value` between `start` and `end` with 0.2 s linear ramps (for tilts).
     static func plateau(_ value: Double, from start: Double, to end: Double, ramp: Double = 0.2) -> Component {
         Component(
             value: { t in
@@ -85,7 +79,6 @@ enum TraceSynth {
             })
     }
 
-    /// Deterministic pseudo-noise (sum of incommensurate sines).
     static func jitter(angle: Double, rate: Double, seed: Double) -> Component {
         Component(
             value: { t in angle * (0.6 * sin(91.7 * t + seed) + 0.4 * sin(53.3 * t + 2 * seed)) },
@@ -96,7 +89,6 @@ enum TraceSynth {
         jitter(angle: 0.05, rate: 2, seed: seed)
     }
 
-    /// Loads a CSV fixture from the test bundle.
     static func fixture(_ name: String) throws -> [HeadPose] {
         guard let url = Bundle.module.url(forResource: name, withExtension: "csv", subdirectory: "Fixtures") else {
             throw CocoaError(.fileNoSuchFile)

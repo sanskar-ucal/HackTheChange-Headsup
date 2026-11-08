@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 
-/** Gentle fade + slide-in on scroll. MotionConfig(reducedMotion="user") drops the slide for reduced motion. */
+/** Fade and slide in once on scroll; the slide is dropped for reduced motion. */
 export function Reveal({
   children,
   delay = 0,

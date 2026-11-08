@@ -13,7 +13,7 @@ public struct NormalizedPoint: Sendable, Equatable {
     public static let center = NormalizedPoint(x: 0.5, y: 0.5)
 }
 
-/// How far (degrees) the head points beyond each screen edge. Drives edge-push scrolling.
+/// How far (degrees) the head points beyond each screen edge.
 public struct EdgeOvershoot: Sendable, Equatable {
     public var up = 0.0, down = 0.0, left = 0.0, right = 0.0
 
@@ -27,6 +27,7 @@ public struct EdgeOvershoot: Sendable, Equatable {
     public static let zero = EdgeOvershoot()
 }
 
+/// Mapped pointer position plus how far the head is past each screen edge.
 public struct MappedPointer: Sendable, Equatable {
     /// Clamped to the screen.
     public var point: NormalizedPoint
@@ -34,11 +35,6 @@ public struct MappedPointer: Sendable, Equatable {
 }
 
 /// Maps a (One Euro filtered) head pose to a normalized screen position.
-///
-/// Pointing is a pure, stateless function of pose: angle relative to neutral → linear
-/// mapping with `sensitivity` against the calibrated per-side ranges. The same pose always
-/// gives the same point; there is no damping, gain or hysteresis state. Roll is ignored.
-/// (The 3 pt dead zone lives in the display-rate renderer, in screen space.)
 public struct PointerMapper: Sendable {
     public struct Config: Sendable, Equatable {
         /// Pure scale on the mapping: 1 maps the calibrated corners to the screen corners.

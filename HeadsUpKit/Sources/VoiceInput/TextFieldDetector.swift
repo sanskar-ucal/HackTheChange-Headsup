@@ -4,7 +4,6 @@ import Foundation
 public struct FocusedElementInfo: Sendable, Equatable {
     public var role: String?
     public var subrole: String?
-    /// Whether `AXValue` is settable (the field is editable).
     public var isValueSettable: Bool
     public var placeholder: String?
     public var descriptionText: String?
@@ -23,8 +22,7 @@ public struct FocusedElementInfo: Sendable, Equatable {
     }
 }
 
-/// A focused element plus an opaque handle (an `AXUIElement` in production) that the
-/// text inserter writes into.
+/// A focused element plus an opaque handle (an `AXUIElement` in production) that the text inserter writes into.
 public struct FocusedElement {
     public var info: FocusedElementInfo
     public var handle: AnyObject?
@@ -42,13 +40,12 @@ public protocol FocusedElementReader: AnyObject {
     var onFocusChange: (@MainActor () -> Void)? { get set }
 }
 
-/// Decides whether a focused element should start voice input. Pure logic.
+/// Decides whether a focused element should start voice input.
 public enum TextFieldDetector {
     public static let textRoles: Set<String> = ["AXTextField", "AXTextArea", "AXComboBox"]
     public static let searchSubrole = "AXSearchField"
     public static let secureSubrole = "AXSecureTextField"
 
-    /// Password fields are never listened to.
     public static func isSecure(_ info: FocusedElementInfo) -> Bool {
         info.role == secureSubrole || info.subrole == secureSubrole
     }

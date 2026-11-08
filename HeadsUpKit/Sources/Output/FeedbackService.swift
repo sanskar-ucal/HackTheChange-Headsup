@@ -16,9 +16,7 @@ public enum FeedbackCue: String, Sendable, Equatable, CaseIterable {
     case listeningStop
 }
 
-/// Plays feedback cues. AirPods have no haptic actuator or public haptics API, so the
-/// shipping implementation is audio (`AudioFeedbackService`); real haptics can be added
-/// behind this protocol if Apple ever exposes them.
+/// Plays feedback cues.
 @MainActor
 public protocol FeedbackService: AnyObject {
     func play(_ cue: FeedbackCue)

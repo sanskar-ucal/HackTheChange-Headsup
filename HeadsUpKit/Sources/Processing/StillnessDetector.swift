@@ -1,7 +1,6 @@
 import Foundation
 
 /// Reports how long the head has stayed within a tolerance of an anchor pose.
-/// Used for calibration dwell and auto-recenter.
 public struct StillnessDetector: Sendable {
     /// Radians.
     public var tolerance: Double

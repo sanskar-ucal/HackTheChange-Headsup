@@ -1,8 +1,6 @@
 import SwiftUI
 
-/// Settings controls sized for head pointing: every control has a hit target of at least
-/// 44 pt, sliders get −/+ buttons, and each row carries a one-line help text.
-
+/// Slider with −/+ buttons, value readout and help text; every target is at least 44 pt.
 struct SliderRow: View {
     let title: String
     let help: String
@@ -50,6 +48,7 @@ struct SliderRow: View {
     }
 }
 
+/// A 44 pt −/+ button for nudging a slider.
 struct StepButton: View {
     let symbol: String
     let label: String
@@ -116,6 +115,7 @@ struct ChoiceRow<Value: Hashable, Label: View>: View {
     }
 }
 
+/// One line of secondary help text under a control.
 struct HelpText: View {
     let text: String
 

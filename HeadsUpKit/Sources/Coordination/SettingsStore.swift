@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-/// Observable, persisted settings for the UI. Every change is saved to `UserDefaults`.
+/// Observable, persisted settings for the UI.
 @MainActor
 public final class SettingsStore: ObservableObject {
     @Published public var settings: HeadsUpSettings {

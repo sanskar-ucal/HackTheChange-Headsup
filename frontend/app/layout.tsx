@@ -5,26 +5,19 @@ import { Providers } from "@/components/Providers";
 import { SITE_URL } from "@/site.config";
 import "./globals.css";
 
-const serif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-instrument-serif",
-  display: "swap",
-});
-
+const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-instrument-serif", display: "swap" });
 const sans = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
-const title = "HeadsUp: your head is the mouse";
+const title = "HeadsUp: a hands-free Mac mouse for people with tetraplegia";
 const description =
-  "HeadsUp turns the AirPods already in your ears into a hands-free mouse for your Mac. Look to point, nod to click. Free, open source, on-device.";
+  "HeadsUp turns AirPods head tracking into a Mac mouse for people with tetraplegia. Turn your head to point, nod to click. Free, with the code on GitHub.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title,
   description,
   applicationName: "HeadsUp",
-  keywords: ["hands-free mouse", "head mouse", "AirPods head tracking", "accessibility", "macOS", "assistive technology"],
+  keywords: ["tetraplegia", "hands-free mouse", "head mouse", "AirPods head tracking", "accessibility", "macOS", "assistive technology"],
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
@@ -48,16 +41,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${serif.variable} ${sans.variable}`}>
       <head>
-        {/* Without JavaScript, scroll-reveal content must never stay invisible. */}
         <noscript>
           <style>{`[style*="opacity:0"]{opacity:1!important;transform:none!important}`}</style>
         </noscript>
       </head>
       <body>
-        <a
-          href="#main"
-          className="fixed left-4 top-3 z-[100] -translate-y-24 rounded-full bg-ink px-5 py-3 font-medium text-paper transition-transform focus:translate-y-0"
-        >
+        <a href="#main" className="fixed left-4 top-3 z-[100] -translate-y-24 rounded-full bg-ink px-5 py-3 font-semibold text-paper transition-transform focus:translate-y-0">
           Skip to content
         </a>
         <Providers>{children}</Providers>

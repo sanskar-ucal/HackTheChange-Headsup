@@ -1,6 +1,6 @@
 # HeadsUp
 
-HeadsUp is a macOS menu-bar app for people who can't use their hands. It lets them control the Mac with **head movement only**, using AirPods with dynamic head tracking as the sensor. Point by turning your head, nod to click, look past the top or bottom edge to scroll, and speak into search fields. Every action is confirmed with a short sound in the AirPods.
+HeadsUp is a hands-free Mac mouse for people with tetraplegia. It's a macOS menu-bar app that turns **head movement** into full pointer control, using AirPods with dynamic head tracking as the sensor. Point by turning your head, nod to click, look past the top or bottom edge to scroll, and speak into search fields. Every action is confirmed with a short sound in the AirPods. A caregiver can help with the one-time setup; after that, everyday use is hands-free.
 
 ## Installation
 
@@ -124,7 +124,7 @@ cd frontend && npm i && npm run dev     # http://localhost:3000
 npm run build                           # static site in frontend/out
 ```
 
-Set the repository URL once, as `GITHUB_URL` in [`frontend/site.config.ts`](frontend/site.config.ts). Every download button and GitHub link uses it. To show the demo video, add `frontend/public/demo.mp4` (and optionally `frontend/public/demo-poster.jpg`).
+The repository link is set once, as `GITHUB_URL` in [`frontend/site.config.ts`](frontend/site.config.ts). It's the site's only call to action.
 
 **Deploy to Vercel:** import the repo, set **Root Directory** to `frontend`, and keep the defaults (framework: Next.js). Nothing else needs configuring.
 

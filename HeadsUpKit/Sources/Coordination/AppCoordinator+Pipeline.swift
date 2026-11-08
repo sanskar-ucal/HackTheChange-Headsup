@@ -20,7 +20,7 @@ extension AppCoordinator {
         case .needsPermissions, .waitingForHeadphones:
             break
         case .calibrating:
-            handleCalibration(raw)  // raw pose only: no filter, sensitivity or spring
+            handleCalibration(raw)
         case .awaitingRecenter:
             handleTilt(raw)
             if state == .awaitingRecenter { handleAutoRecenter(filtered) }
@@ -80,8 +80,7 @@ extension AppCoordinator {
 
     // MARK: Recentering
 
-    /// Makes the current pose neutral (keeping the calibrated ranges) and glides the pointer
-    /// to the center of the screen.
+    /// Makes the current pose neutral.
     public func recenter() {
         guard state == .tracking || state == .awaitingRecenter,
               let pose = lastFilteredPose, let current = calibration else { return }
@@ -131,9 +130,7 @@ extension AppCoordinator {
         }
     }
 
-    /// The moment a gesture starts, freeze the real cursor exactly where it is (the spring
-    /// stops and no moves are posted). A rejected candidate releases with a short glide.
-    /// Returns true if the freeze was released on this sample.
+    /// The moment a gesture starts, freeze the real cursor exactly where it is.
     @discardableResult
     func applyGestureFreeze(_ output: TrackingEngine.Output) -> Bool {
         if let decision = output.decision { logGesture(decision) }
@@ -151,8 +148,6 @@ extension AppCoordinator {
     }
 
     /// Ends a freeze by gliding (no jump) from the frozen spot to the head-pointed position.
-    /// The smoothing filter still carries the nod's own up/down movement, so it is re-seeded
-    /// from the next raw pose, and the glide goes to that fresh target, not a stale one.
     func releasePointer() {
         pointerFrozen = false
         freezeUntil = nil
@@ -184,8 +179,7 @@ extension AppCoordinator {
         lastGesture = gesture
         switch dispatcher.action(for: gesture) {
         case .click:
-            // Click exactly at the frozen spot, then keep the cursor still like a mouse
-            // ("Hold after click"); `renderFrame` releases it with a glide afterwards.
+            // Click exactly at the frozen spot, then keep the cursor still like a mouse ("Hold after click").
             postAction { dispatcher.dispatch(gesture, at: point) }
             animator.place(at: point)
             lastPostedPoint = point

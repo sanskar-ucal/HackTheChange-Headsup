@@ -3,8 +3,6 @@ import Foundation
 import OSLog
 
 /// Plays programmatically generated earcons through the current output (the AirPods).
-/// All buffers are synthesized up front and the engine and player stay running, so a cue
-/// starts within one render cycle of `play`.
 @MainActor
 public final class AudioFeedbackService: FeedbackService {
     private let engine = AVAudioEngine()
@@ -41,9 +39,14 @@ public final class AudioFeedbackService: FeedbackService {
         rebuild()
     }
 
+<<<<<<< HEAD
     /// Stops the engine, points it at the current default output (the AirPods when connected),
     /// reconnects the graph and starts again. A configuration or route change stops the engine
     /// and can leave stale connections, so a plain `start()` isn't enough.
+=======
+    /// Stops the engine, points it at the current default output (the AirPods when connected), reconnects the
+    /// graph and starts again. A config or route change stops the engine and can leave stale connections.
+>>>>>>> cdc6d7146c27e1e0f65617d4b343c4e907f2d9cb
     private func rebuild() {
         engine.stop()
         if let device = AudioEngineSupport.defaultOutputDevice() {
@@ -66,7 +69,11 @@ public final class AudioFeedbackService: FeedbackService {
         self.muted = muted
     }
 
+<<<<<<< HEAD
     /// Out-of-range or zero volumes fall back to the default; "Mute cues" is the way to silence them.
+=======
+    /// Out-of-range or zero volumes fall back to the default, since "Mute cues" is the way to silence them.
+>>>>>>> cdc6d7146c27e1e0f65617d4b343c4e907f2d9cb
     static func sanitizedVolume(_ volume: Double) -> Float {
         guard volume.isFinite, volume > 0 else { return Float(HeadsUpSettings.defaults.feedbackVolume) }
         return Float(min(volume, 1))
@@ -91,32 +98,31 @@ enum Earcon {
         var duration: Double
     }
 
-    /// Each cue is under 150 ms and has its own melodic contour.
     static func tones(for cue: FeedbackCue) -> [Tone] {
         switch cue {
-        case .select: return [Tone(frequency: 880, duration: 0.05), Tone(frequency: 1318.5, duration: 0.07)]   // rising
-        case .cancel: return [Tone(frequency: 659.3, duration: 0.05), Tone(frequency: 440, duration: 0.07)]    // falling
-        case .paused: return [Tone(frequency: 523.3, duration: 0.06), Tone(frequency: 392, duration: 0.08)]    // low falling
-        case .resumed: return [Tone(frequency: 392, duration: 0.06), Tone(frequency: 523.3, duration: 0.08)]   // low rising
+        case .select: return [Tone(frequency: 880, duration: 0.05), Tone(frequency: 1318.5, duration: 0.07)]
+        case .cancel: return [Tone(frequency: 659.3, duration: 0.05), Tone(frequency: 440, duration: 0.07)]
+        case .paused: return [Tone(frequency: 523.3, duration: 0.06), Tone(frequency: 392, duration: 0.08)]
+        case .resumed: return [Tone(frequency: 392, duration: 0.06), Tone(frequency: 523.3, duration: 0.08)]
         case .recentered:
             return [Tone(frequency: 1046.5, duration: 0.035), Tone(frequency: 0, duration: 0.02),
                     Tone(frequency: 1046.5, duration: 0.035), Tone(frequency: 0, duration: 0.02),
-                    Tone(frequency: 1046.5, duration: 0.035)]                                                     // triple tick
-        case .calibrationStep: return [Tone(frequency: 1568, duration: 0.05)]                                    // single tick
+                    Tone(frequency: 1046.5, duration: 0.035)]
+        case .calibrationStep: return [Tone(frequency: 1568, duration: 0.05)]
         case .calibrationDone:
             return [Tone(frequency: 784, duration: 0.045), Tone(frequency: 987.8, duration: 0.045),
-                    Tone(frequency: 1174.7, duration: 0.055)]                                                     // arpeggio
+                    Tone(frequency: 1174.7, duration: 0.055)]
         case .error:
             return [Tone(frequency: 220, duration: 0.05), Tone(frequency: 0, duration: 0.03),
-                    Tone(frequency: 220, duration: 0.05)]                                                         // low double
+                    Tone(frequency: 220, duration: 0.05)]
         case .scrollOn:
             return [Tone(frequency: 587.3, duration: 0.04), Tone(frequency: 784, duration: 0.04),
-                    Tone(frequency: 587.3, duration: 0.05)]                                                       // up-down wave
+                    Tone(frequency: 587.3, duration: 0.05)]
         case .scrollOff:
             return [Tone(frequency: 784, duration: 0.04), Tone(frequency: 587.3, duration: 0.04),
-                    Tone(frequency: 440, duration: 0.05)]                                                         // settling
-        case .listeningStart: return [Tone(frequency: 698.5, duration: 0.05), Tone(frequency: 1396.9, duration: 0.08)] // octave up
-        case .listeningStop: return [Tone(frequency: 1396.9, duration: 0.05), Tone(frequency: 698.5, duration: 0.08)]  // octave down
+                    Tone(frequency: 440, duration: 0.05)]
+        case .listeningStart: return [Tone(frequency: 698.5, duration: 0.05), Tone(frequency: 1396.9, duration: 0.08)]
+        case .listeningStop: return [Tone(frequency: 1396.9, duration: 0.05), Tone(frequency: 698.5, duration: 0.08)]
         }
     }
 
@@ -124,8 +130,6 @@ enum Earcon {
         tones.reduce(0) { $0 + $1.duration }
     }
 
-    /// Renders tones into a mono float buffer with 5 ms attack / 15 ms release envelopes
-    /// so cues don't click or startle.
     static func buffer(for tones: [Tone], format: AVAudioFormat, amplitude: Float = 0.35) -> AVAudioPCMBuffer? {
         let frameCount = AVAudioFrameCount((totalDuration(of: tones) * sampleRate).rounded(.up))
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount),

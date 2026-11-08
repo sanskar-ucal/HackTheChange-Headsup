@@ -5,9 +5,7 @@ import Foundation
 /// How text got into the field, so it can be undone.
 public struct InsertionRecord {
     public enum Method: Equatable {
-        /// `AXValue` was set; undo restores `original`.
         case setValue(original: String)
-        /// Typed with key events; undo sends this many backspaces.
         case typed(characters: Int)
     }
 
@@ -27,12 +25,10 @@ public struct InsertionRecord {
 public protocol TextInserter: AnyObject {
     func insert(_ text: String, into element: FocusedElement) -> InsertionRecord?
     func undo(_ record: InsertionRecord)
-    /// Submits (e.g. runs the search).
     func pressReturn()
 }
 
-/// Appends via `kAXValueAttribute`; falls back to typing Unicode key events when the
-/// value can't be set (or doesn't stick, as in some web views).
+/// Appends via `kAXValueAttribute`; falls back to typing Unicode key events when the value can't be set.
 @MainActor
 public final class AXTextInserter: TextInserter {
     private let source = CGEventSource(stateID: .hidSystemState)
@@ -75,7 +71,6 @@ public final class AXTextInserter: TextInserter {
         press(Self.returnKey)
     }
 
-    /// Adds a separating space when appending to existing text.
     static func join(_ original: String, _ text: String) -> String {
         if original.isEmpty || original.hasSuffix(" ") { return original + text }
         return original + " " + text

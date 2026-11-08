@@ -1,8 +1,8 @@
 import Foundation
 
+/// Direction badge shown on the pointer while scrolling.
 public enum ScrollDirection: String, Sendable, Equatable {
     case up, down, left, right
-    /// Scroll mode is active but not currently moving.
     case none
 }
 
@@ -12,7 +12,6 @@ public enum PointerContext: Sendable, Equatable {
     case hoveringClickable
     case pressing
     case scrolling(ScrollDirection)
-    /// Reserved for a future drag mode.
     case dragHint
     case listening
     case paused
@@ -23,7 +22,6 @@ public enum PointerContext: Sendable, Equatable {
 public struct PointerContextInputs: Sendable, Equatable {
     public var state: AppState
     public var isPressing: Bool
-    /// Non-nil while scrolling (edge push or scroll mode).
     public var scrollDirection: ScrollDirection?
     public var holdFraction: Double?
 
@@ -36,9 +34,8 @@ public struct PointerContextInputs: Sendable, Equatable {
     }
 }
 
+/// Picks the pointer context from app state, press, scroll and hold progress.
 public enum PointerContextResolver {
-    /// Priority: listening > paused > pressing > scrolling > tilt progress > idle.
-    /// (`.hoveringClickable` is kept for the pointer styles but is not produced.)
     public static func context(for inputs: PointerContextInputs) -> PointerContext {
         switch inputs.state {
         case .listening, .voiceReview: return .listening
@@ -52,7 +49,6 @@ public enum PointerContextResolver {
         return .idle
     }
 
-    /// Direction of a scroll velocity, or nil when not scrolling.
     public static func direction(of velocity: ScrollVelocity) -> ScrollDirection? {
         if velocity.isZero { return nil }
         if abs(velocity.vertical) >= abs(velocity.horizontal) {

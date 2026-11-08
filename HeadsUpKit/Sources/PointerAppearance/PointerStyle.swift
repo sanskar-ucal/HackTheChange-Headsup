@@ -2,7 +2,6 @@ import Foundation
 
 /// What to draw for the pointer body.
 public enum PointerGlyph: Sendable, Equatable {
-    /// An SF Symbol name.
     case symbol(String)
     case circle
     case ring
@@ -10,14 +9,11 @@ public enum PointerGlyph: Sendable, Equatable {
     case crosshair
 }
 
-/// One concrete pointer appearance. The overlay places the glyph so `hotspot` (unit square,
-/// top-left origin) sits exactly on the click point.
+/// One concrete pointer appearance.
 public struct PointerShape: Sendable, Equatable {
     public var glyph: PointerGlyph
-    /// SF Symbol drawn as a small badge (scroll chevrons, mic, pause).
     public var badge: String?
     public var dimmed: Bool
-    /// Hover / press emphasis (overlay scales or fills the glyph).
     public var emphasized: Bool
     public var hotspot: NormalizedPoint
 
@@ -31,8 +27,7 @@ public struct PointerShape: Sendable, Equatable {
     }
 }
 
-/// Maps pointer contexts to shapes. The tilt-hold ring is drawn on top by the overlay for
-/// every style.
+/// Maps pointer contexts to shapes.
 public protocol PointerStyle: Sendable {
     var kind: PointerStyleKind { get }
     func shape(for context: PointerContext) -> PointerShape
@@ -50,6 +45,7 @@ extension PointerStyleKind {
     }
 }
 
+/// SF Symbol names for the small badges on the pointer.
 enum PointerBadge {
     static func scroll(_ direction: ScrollDirection) -> String {
         switch direction {
@@ -66,7 +62,6 @@ enum PointerBadge {
 }
 
 /// Default style: a hand that changes shape with context.
-/// Hotspots are the fingertip positions within each SF Symbol (verify visually on device).
 public struct HandPointerStyle: PointerStyle {
     public let kind = PointerStyleKind.hand
 
@@ -97,8 +92,7 @@ public struct HandPointerStyle: PointerStyle {
     }
 }
 
-/// Geometric styles (green circle, ring, dot, crosshair): same glyph in every context,
-/// with emphasis and badges carrying the context. The hotspot is the center.
+/// Geometric styles (green circle, ring, dot, crosshair): same glyph in every context.
 public struct SimplePointerStyle: PointerStyle {
     public let kind: PointerStyleKind
     public let glyph: PointerGlyph

@@ -2,16 +2,13 @@ import ApplicationServices
 import CoreGraphics
 import Foundation
 
-/// Posts scroll input. Deltas are pixels; positive `dy` reveals content above (wheel up),
-/// positive `dx` reveals content to the left.
+/// Posts scroll input.
 @MainActor
 public protocol ScrollController: AnyObject {
     func scroll(dx: Double, dy: Double, at point: CGPoint)
 }
 
-/// Pixel-precise scrolling via `CGEvent(scrollWheelEvent2Source:units:.pixel…)`. Called
-/// once per display frame with small deltas; fractional pixels are carried over so slow
-/// speeds still scroll smoothly.
+/// Pixel-precise scrolling via `CGEvent(scrollWheelEvent2Source:units:.pixel…)`.
 @MainActor
 public final class CGEventScrollController: ScrollController {
     private let source = CGEventSource(stateID: .hidSystemState)

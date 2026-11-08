@@ -8,6 +8,7 @@ public protocol CalibrationStoring: AnyObject {
     func clear()
 }
 
+/// Persists the calibration as JSON in `UserDefaults`.
 @MainActor
 public final class UserDefaultsCalibrationStore: CalibrationStoring {
     private let defaults: UserDefaults
