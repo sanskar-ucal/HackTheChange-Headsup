@@ -134,6 +134,7 @@ extension AppCoordinator {
 
     /// The moment a gesture starts, freeze the real cursor exactly where it is (the spring
     /// stops and no moves are posted). A rejected candidate releases with a short glide.
+    /// A confirmed gesture keeps the freeze for this sample so it acts at `frozenPoint`.
     /// Returns true if the freeze was released on this sample.
     @discardableResult
     func applyGestureFreeze(_ output: TrackingEngine.Output) -> Bool {
@@ -144,7 +145,7 @@ extension AppCoordinator {
             frozenPoint = here
             pointerFrozen = true
             freezeUntil = nil
-        } else if !output.isFrozen, pointerFrozen, freezeUntil == nil {
+        } else if !output.isFrozen, pointerFrozen, freezeUntil == nil, output.commands.isEmpty {
             releasePointer()
             return true
         }
