@@ -54,6 +54,14 @@ final class PointerAppearanceTests: XCTestCase {
         XCTAssertNil(PointerContextResolver.direction(of: .zero))
     }
 
+    func testEveryColorPresetHasASpokenName() {
+        for preset in RGBAColor.presets {
+            XCTAssertNotNil(preset.presetName, "\(preset) needs a VoiceOver name")
+        }
+        XCTAssertEqual(Set(RGBAColor.presets.compactMap(\.presetName)).count, RGBAColor.presets.count)
+        XCTAssertNil(RGBAColor(red: 0.1, green: 0.2, blue: 0.3).presetName)
+    }
+
     func testDefaultsAreGreenCircleAndCalm() {
         let settings = HeadsUpSettings.defaults
         XCTAssertEqual(settings.pointerStyle, .greenCircle, "the v1 halo is the default")
