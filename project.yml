@@ -1,0 +1,54 @@
+name: HeadsUp
+
+options:
+  bundleIdPrefix: com.hackthechange
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+packages:
+  HeadsUpKit:
+    path: HeadsUpKit
+
+targets:
+  HeadsUp:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+        excludes:
+          - Info.plist
+          - HeadsUp.entitlements
+    dependencies:
+      - package: HeadsUpKit
+    settings:
+      base:
+        PRODUCT_NAME: HeadsUp
+        PRODUCT_BUNDLE_IDENTIFIER: com.hackthechange.HeadsUp
+        INFOPLIST_FILE: App/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: App/HeadsUp.entitlements
+        # Local "Sign to Run Locally". Set DEVELOPMENT_TEAM + Apple Development for a stable
+        # identity, otherwise macOS may forget the Accessibility grant after each rebuild.
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        ENABLE_HARDENED_RUNTIME: NO
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ENABLE_PREVIEWS: YES
+
+schemes:
+  HeadsUp:
+    build:
+      targets:
+        HeadsUp: all
+    run:
+      config: Debug
+    archive:
+      config: Release
