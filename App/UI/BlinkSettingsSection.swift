@@ -99,6 +99,7 @@ struct BlinkIndicatorView: View {
                 .foregroundStyle(blink.face == .tracked ? (blink.eyesClosed ? Color.orange : Color.green)
                                  : Color.secondary)
                 .frame(width: 44, height: 44)
+                .accessibilityHidden(true)  // the text next to it says the same
             VStack(alignment: .leading, spacing: 4) {
                 Text(faceText)
                 if isTracking {
@@ -107,8 +108,12 @@ struct BlinkIndicatorView: View {
                         ForEach(0..<3, id: \.self) { index in
                             Image(systemName: index < blink.pendingBlinks ? "circle.fill" : "circle")
                                 .foregroundStyle(index < blink.pendingBlinks ? Color.accentColor : Color.secondary)
+                                .accessibilityHidden(true)
                         }
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Blinks in a row")
+                    .accessibilityValue("\(blink.pendingBlinks) of 3")
                     Text("Blinks counted: \(blink.blinksSeen)\(lastCommandText)")
                         .font(.caption)
                         .monospacedDigit()
