@@ -218,7 +218,8 @@ An optional second way to click, for times when nodding is tiring. The AirPods s
 - **How it decides.** Each eye's openness (Eye Aspect Ratio) is compared to your own open-eye baseline, learned continuously over the last ~5 s. Both eyes must close below 60 % of the baseline and reopen above 80 %. A blink lasts 50–400 ms, so winks and resting your eyes never count. Blinks up to 450 ms apart form one sequence, and there's a 700 ms cooldown after an action.
 - **Safety checks.** Blinks are ignored while paused, calibrating or listening, while your head turns faster than 40°/s, and whenever the camera can't see well: the live status chip shows *No face*, *Low light*, *Face turned* or *Too far*.
 - **Tuning.** Sensitivity, max gap, shortest/longest blink, cooldown and *Require both eyes* are in Settings, with live eye meters and sequence dots. Dots also appear next to the pointer while a sequence is counting.
-- If the camera fails, Settings shows why and retries; nod and shake keep working.
+- If the camera fails, Settings shows why and retries; nod and shake keep working. If access is denied, **Open Camera Settings** goes straight to Privacy & Security → Camera. Each step (permission, device, session running, frames/s) is listed in **Settings → Advanced → Live readout**.
+- **Permission stuck?** Ad-hoc rebuilds can leave a stale camera grant. Quit HeadsUp, run `tccutil reset Camera com.hackthechange.HeadsUp`, then reopen it and allow the camera again.
 
 ## Pointer styles
 

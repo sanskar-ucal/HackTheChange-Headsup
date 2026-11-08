@@ -71,6 +71,10 @@ public final class AppCoordinator: ObservableObject {
     var blinkHold = false
     var cameraRetryPending = false
     var headRateDegPerSec = 0.0
+    var cameraFrameCount = 0
+    var cameraFpsWindowStart: TimeInterval?
+    var lastCameraFpsLog: TimeInterval = -.infinity
+    var cameraAccessRequested = false
 
     static let log = Logger(subsystem: "com.hackthechange.HeadsUp", category: "coordinator")
     static let signposter = OSSignposter(subsystem: "com.hackthechange.HeadsUp", category: .pointsOfInterest)
@@ -124,6 +128,7 @@ public final class AppCoordinator: ObservableObject {
         deps.faceSource?.onFrame = { [weak self] in self?.handle(faceFrame: $0) }
         deps.faceSource?.onFailure = { [weak self] in self?.handleCameraFailure($0) }
         deps.faceSource?.onRunning = { [weak self] in self?.blinkTelemetry.camera = .running }
+        deps.faceSource?.onLog = { [weak self] in self?.logCamera($0) }
         source.start()
         startDiagnostics()
         refreshPermissions()

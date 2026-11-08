@@ -77,6 +77,8 @@ public enum CameraState: Sendable, Equatable {
     case starting
     case running
     case failed(String)
+    /// Camera permission is denied or restricted in Privacy & Security.
+    case denied
 
     public var displayName: String {
         switch self {
@@ -84,6 +86,7 @@ public enum CameraState: Sendable, Equatable {
         case .starting: return "Starting camera…"
         case .running: return "Camera on"
         case .failed(let message): return message
+        case .denied: return "Camera access is off"
         }
     }
 }
@@ -94,6 +97,8 @@ public protocol FaceSampleSource: AnyObject {
     var onFrame: (@MainActor (FaceFrame) -> Void)? { get set }
     var onFailure: (@MainActor (String) -> Void)? { get set }
     var onRunning: (@MainActor () -> Void)? { get set }
+    /// Step-by-step diagnostics (permission, device, session) for the Advanced log.
+    var onLog: (@MainActor (String) -> Void)? { get set }
     var isRunning: Bool { get }
     func start()
     func stop()
@@ -105,6 +110,7 @@ public final class DisabledFaceSource: FaceSampleSource {
     public var onFrame: (@MainActor (FaceFrame) -> Void)?
     public var onFailure: (@MainActor (String) -> Void)?
     public var onRunning: (@MainActor () -> Void)?
+    public var onLog: (@MainActor (String) -> Void)?
     public private(set) var isRunning = false
 
     public init() {}

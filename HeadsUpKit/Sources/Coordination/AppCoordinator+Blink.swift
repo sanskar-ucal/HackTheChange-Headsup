@@ -11,14 +11,25 @@ extension AppCoordinator {
     func updateCamera() {
         guard let source = deps.faceSource else { return }
         let shouldRun = blinksActive && state == .tracking
+        if blinksActive, !shouldRun { requestCameraAccessIfNeeded() }
         if shouldRun, !source.isRunning {
             blinkTelemetry.camera = .starting
             source.start()
         } else if !shouldRun, source.isRunning {
             source.stop()
             blinkTelemetry.camera = .off
+            blinkTelemetry.fps = 0
+            cameraFpsWindowStart = nil
         }
         if !shouldRun { resetBlinks() }
+    }
+
+    /// Asks for camera access as soon as blink controls are turned on, so the prompt doesn't wait for tracking.
+    private func requestCameraAccessIfNeeded() {
+        guard !cameraAccessRequested, deps.permissions.currentStatus().camera == .notDetermined else { return }
+        cameraAccessRequested = true
+        logCamera("camera permission: not determined (asking)")
+        deps.permissions.requestCamera()
     }
 
     public func retryCamera() {
@@ -26,19 +37,59 @@ extension AppCoordinator {
         updateCamera()
     }
 
+    /// Plays the click cue so the user can check the AirPods route and volume.
+    public func playTestSound() {
+        deps.feedback.play(.select)
+    }
+
+    public func openCameraSettings() {
+        deps.permissions.openCameraSettings()
+    }
+
     func handleCameraFailure(_ message: String) {
-        blinkTelemetry.camera = .failed(message)
+        let camera = deps.permissions.currentStatus().camera
+        blinkTelemetry.camera = camera == .denied || camera == .restricted ? .denied : .failed(message)
+        blinkTelemetry.fps = 0
+        logCamera("camera error: \(message)")
         resetBlinks()
         guard !cameraRetryPending else { return }
         cameraRetryPending = true
         deps.schedule(5) { [weak self] in
             guard let self else { return }
             self.cameraRetryPending = false
-            if case .failed = self.blinkTelemetry.camera { self.updateCamera() }
+            switch self.blinkTelemetry.camera {
+            case .failed, .denied: self.updateCamera()
+            case .off, .starting, .running: break
+            }
+        }
+    }
+
+    func logCamera(_ line: String) {
+        telemetry.appendGestureLog(line)
+        Self.log.info("\(line, privacy: .public)")
+    }
+
+    /// Frames per second over 1 s windows, logged every 5 s.
+    private func measureCameraRate(at time: TimeInterval) {
+        guard let start = cameraFpsWindowStart else {
+            cameraFpsWindowStart = time
+            cameraFrameCount = 0
+            return
+        }
+        cameraFrameCount += 1
+        let elapsed = time - start
+        guard elapsed >= 1 else { return }
+        blinkTelemetry.fps = Double(cameraFrameCount) / elapsed
+        cameraFpsWindowStart = time
+        cameraFrameCount = 0
+        if time - lastCameraFpsLog >= 5 {
+            lastCameraFpsLog = time
+            logCamera(String(format: "camera frames/s: %.1f", blinkTelemetry.fps))
         }
     }
 
     func handle(faceFrame frame: FaceFrame) {
+        measureCameraRate(at: frame.timestamp)
         let quality = blinkQuality.assess(frame)
         var sequenceEvents: [BlinkSequenceEvent] = []
         let headMoving = headRateDegPerSec > settings.blinkMaxHeadRateDegPerSec

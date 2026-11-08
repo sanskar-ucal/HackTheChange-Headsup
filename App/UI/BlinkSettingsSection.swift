@@ -6,6 +6,7 @@ struct BlinkSettingsSection: View {
     @Binding var settings: HeadsUpSettings
     @ObservedObject var telemetry: BlinkTelemetry
     let retry: () -> Void
+    let openCameraSettings: () -> Void
 
     var body: some View {
         BigToggle(title: "Use blink controls",
@@ -14,7 +15,7 @@ struct BlinkSettingsSection: View {
         ChoiceRow(title: "Input for clicking", help: "Which gestures click and press Escape.",
                   selection: $settings.clickInput, options: ClickInput.allCases) { Text($0.displayName) }
         if settings.blinkEnabled {
-            BlinkLiveView(telemetry: telemetry, retry: retry)
+            BlinkLiveView(telemetry: telemetry, retry: retry, openCameraSettings: openCameraSettings)
             SliderRow(title: "Sensitivity", help: "Higher counts lighter eye closures as blinks.",
                       value: $settings.blinkSensitivity, range: 0...1, step: 0.05, format: "%.0f%%", scale: 100,
                       minLabel: "Firm blinks", maxLabel: "Light blinks")
@@ -37,6 +38,7 @@ struct BlinkSettingsSection: View {
 struct BlinkLiveView: View {
     @ObservedObject var telemetry: BlinkTelemetry
     let retry: () -> Void
+    let openCameraSettings: () -> Void
 
     private var statusText: String {
         if case .running = telemetry.camera { return telemetry.quality.displayName }
@@ -56,10 +58,20 @@ struct BlinkLiveView: View {
                     .padding(.horizontal, 10).padding(.vertical, 4)
                     .background(Capsule().fill(statusOK ? Color.green.opacity(0.2) : Color.orange.opacity(0.2)))
                 Spacer()
+                if case .running = telemetry.camera {
+                    Text(String(format: "%.0f fps", telemetry.fps))
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                }
                 SequenceDots(count: telemetry.sequenceCount)
             }
-            if case .failed = telemetry.camera {
+            switch telemetry.camera {
+            case .failed:
                 Button("Retry camera", action: retry).frame(minHeight: 44)
+            case .denied:
+                HelpText("HeadsUp needs camera access for blink controls.")
+                Button("Open Camera Settings", action: openCameraSettings).frame(minHeight: 44)
+            case .off, .starting, .running:
+                EmptyView()
             }
             EARMeter(label: "Left eye", value: telemetry.leftEAR, threshold: telemetry.leftThreshold)
             EARMeter(label: "Right eye", value: telemetry.rightEAR, threshold: telemetry.rightThreshold)
@@ -67,7 +79,7 @@ struct BlinkLiveView: View {
                 .font(.caption).foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 }
 

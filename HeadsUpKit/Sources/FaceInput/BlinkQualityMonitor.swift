@@ -56,6 +56,8 @@ public final class BlinkTelemetry: ObservableObject {
     @Published public internal(set) var rightThreshold: Double?
     @Published public internal(set) var sequenceCount = 0
     @Published public internal(set) var lastAction: String?
+    /// Camera frames analyzed per second.
+    @Published public internal(set) var fps: Double = 0
 
     var lastPublish: TimeInterval = -.infinity
 
