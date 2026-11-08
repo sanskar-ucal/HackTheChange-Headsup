@@ -42,14 +42,16 @@ public struct PracticeSession: Sendable, Equatable {
 
     /// Feed the pointer position (normalized within the pointing rect) each sample.
     /// `aspect` is width / height of that rect, so targets are round on screen.
-    /// Returns true if anything visible changed.
+    /// Returns true if anything visible changed or the session clock started; the caller
+    /// must store the session then.
     @discardableResult
     public mutating func update(pointer: NormalizedPoint, aspect: Double, time: TimeInterval) -> Bool {
         guard phase == .running else { return false }
+        // The first sample starts the session clock; report it so the caller keeps it.
+        var changed = startTime == nil
         let start = startTime ?? time
         startTime = start
         let index = targetIndex(at: pointer, aspect: aspect)
-        var changed = false
         if index != insideIndex {
             if let left = insideIndex, !targets[left].hit { overshoots += 1 }
             if let entered = index, targets[entered].reachTime == nil {
