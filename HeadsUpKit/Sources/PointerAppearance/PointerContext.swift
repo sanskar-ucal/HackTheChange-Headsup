@@ -22,16 +22,14 @@ public enum PointerContext: Sendable, Equatable {
 /// Inputs the coordinator knows; resolved into a single `PointerContext`.
 public struct PointerContextInputs: Sendable, Equatable {
     public var state: AppState
-    public var isSnapped: Bool
     public var isPressing: Bool
     /// Non-nil while scrolling (edge push or scroll mode).
     public var scrollDirection: ScrollDirection?
     public var holdFraction: Double?
 
-    public init(state: AppState, isSnapped: Bool = false, isPressing: Bool = false,
+    public init(state: AppState, isPressing: Bool = false,
                 scrollDirection: ScrollDirection? = nil, holdFraction: Double? = nil) {
         self.state = state
-        self.isSnapped = isSnapped
         self.isPressing = isPressing
         self.scrollDirection = scrollDirection
         self.holdFraction = holdFraction
@@ -39,7 +37,8 @@ public struct PointerContextInputs: Sendable, Equatable {
 }
 
 public enum PointerContextResolver {
-    /// Priority: listening > paused > pressing > scrolling > tilt progress > hover > idle.
+    /// Priority: listening > paused > pressing > scrolling > tilt progress > idle.
+    /// (`.hoveringClickable` is kept for the pointer styles but is not produced.)
     public static func context(for inputs: PointerContextInputs) -> PointerContext {
         switch inputs.state {
         case .listening, .voiceReview: return .listening
@@ -50,7 +49,6 @@ public enum PointerContextResolver {
         if inputs.state == .scrollMode { return .scrolling(inputs.scrollDirection ?? .none) }
         if let direction = inputs.scrollDirection { return .scrolling(direction) }
         if let fraction = inputs.holdFraction { return .tiltProgress(fraction) }
-        if inputs.isSnapped { return .hoveringClickable }
         return .idle
     }
 

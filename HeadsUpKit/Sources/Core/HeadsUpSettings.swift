@@ -7,27 +7,26 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     /// 0.25…1.5. At 1.0 the calibrated corners reach the screen corners; lower values
     /// need more head turn for the same pointer travel (calmer).
     public var sensitivity: Double = 0.6
-    /// Once the head has been still, it must move this far before the pointer moves again.
-    /// The dead zone only holds the pointer; it never offsets the mapping.
-    public var deadZoneDegrees: Double = 0.6
-    /// How long without a dead-zone-sized movement counts as "still".
-    public var deadZoneSettleTime: Double = 0.25
     /// false = map to the main display only; true = map to the union of all displays.
     public var spanAllDisplays: Bool = false
 
     // MARK: Rendering
-    /// Critically damped spring stiffness (ω²). 14000 settles (2 %) in about 49 ms.
-    public var pointerSpringStiffness: Double = 14000
+    /// Critically damped spring stiffness (ω²). 22000 settles (2 %) in about 39 ms.
+    public var pointerSpringStiffness: Double = 22000
+    /// Dead zone: if the target is closer than this (points) to the cursor, it doesn't move.
+    public var pointerDeadZonePoints: Double = 3
     /// Moves smaller than this (points) are not posted.
     public var minMoveDistance: Double = 0.5
     /// Pause/resume/recenter glide.
     public var glideDuration: Double = 0.15
-    /// Gesture rollback and snap glide.
-    public var rollbackGlideDuration: Double = 0.08
+    /// After a nod click the cursor stays frozen this long ("Hold after click").
+    public var holdAfterClick: Double = 0.4
+    /// Glide from the frozen spot back to the head-pointed position after a nod.
+    public var releaseGlideDuration: Double = 0.12
 
     // MARK: Smoothing (One Euro filter)
     public var filterMinCutoff: Double = 1.0
-    public var filterBeta: Double = 0.01
+    public var filterBeta: Double = 0.007
     public var filterDCutoff: Double = 1.0
 
     // MARK: Axis conventions (flip if the hardware reports the opposite sign)
@@ -47,6 +46,9 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     /// The rollback point is taken this long before the gesture onset.
     public var gestureOnsetLookback: Double = 0.1
     public var cursorHistoryDuration: Double = 0.6
+    /// Raw pitch-dominant head speed at which the cursor already stops following, so the
+    /// first samples of a nod (before the onset threshold) don't move it.
+    public var nodPreHoldRateDegPerSec: Double = 30
     /// Double nod toggles in-place scroll mode. Off = single nods click with no delay.
     public var doubleNodEnabled: Bool = false
     /// Both nods must start within this window.
@@ -108,7 +110,7 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     public var voiceClickFocusWindow: Double = 1.0
 
     // MARK: Pointer appearance
-    public var pointerStyle: PointerStyleKind = .hand
+    public var pointerStyle: PointerStyleKind = .greenCircle
     /// nil = the style's default color.
     public var pointerColor: RGBAColor?
     public var pointerSize: PointerSize = .large
@@ -117,34 +119,13 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     /// Experimental: hide the system arrow while tracking (see README).
     public var hideSystemCursor: Bool = false
 
-    // MARK: Magnetic snapping
-    public var snapEnabled: Bool = true
-    public var magnetStrength: Double = 0.3
-    public var snapRadius: Double = 20
-    /// Inside a target the pointer moves this fraction of the head movement (1 = no stickiness).
-    public var snapStickiness: Double = 0.85
-    public var snapReleaseFactor: Double = 1.4
-    /// Any head turn faster than this releases the snap immediately.
-    public var snapReleaseSpeedDegPerSec: Double = 20
-    /// Turning the head this far from where the snap began releases it.
-    public var snapReleaseAngleDegrees: Double = 1.5
-    /// Snapping only engages after the head has been slower than this…
-    public var snapEngageMaxSpeedDegPerSec: Double = 8
-    /// …for this long.
-    public var snapEngageStillTime: Double = 0.15
-    /// Targets larger than this fraction of the screen are containers and ignored.
-    public var snapMaxTargetScreenFraction: Double = 0.4
-    public var targetQueryInterval: Double = 0.15
-    public var targetSearchRadius: Double = 200
-    public var targetMaxElements: Int = 400
+    /// Accessibility request timeout for voice input's focused-field checks.
     public var axMessagingTimeout: Double = 0.05
 
     // MARK: Sound
     public var feedbackVolume: Double = 0.6
     public var feedbackMuted: Bool = false
     public var speechEnabled: Bool = true
-    public var snapTickEnabled: Bool = true
-    public var snapTickVolume: Double = 0.25
 
     // MARK: Diagnostics & housekeeping
     public var telemetryRateHz: Double = 10

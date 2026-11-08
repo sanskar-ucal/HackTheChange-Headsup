@@ -3,8 +3,8 @@ import Foundation
 /// Hands-free calibration (the v1 flow): center, then the four corners, each captured when
 /// the head has dwelled still on it, then the center again as a drift check.
 ///
-/// Feed it **raw** sensor poses: calibration must not depend on smoothing, sensitivity,
-/// snapping or the pointer spring. Each capture is the median pose over the last
+/// Feed it **raw** sensor poses: calibration must not depend on smoothing, sensitivity
+/// or the pointer spring. Each capture is the median pose over the last
 /// `captureWindow` of the dwell, and is only accepted if the head turned slower than
 /// `maxCaptureRate` throughout that window.
 public struct CalibrationSession: Sendable {

@@ -3,15 +3,16 @@ import XCTest
 @testable import HeadsUpKit
 
 final class PointerAnimatorTests: XCTestCase {
-    func testSpringSettlesWithin50Milliseconds() {
+    func testSpringSettlesWithin40MillisecondsWithoutOvershoot() {
         var animator = PointerAnimator(stiffness: HeadsUpSettings.defaults.pointerSpringStiffness)
         animator.place(at: .zero)
         let target = CGPoint(x: 100, y: 0)
         var position = CGPoint.zero
-        for frame in 1...6 {  // 6 frames at 120 Hz = 50 ms
-            position = animator.step(toward: target, now: Double(frame) / 120, dt: 1.0 / 120.0).position
+        for frame in 1...8 {  // 8 frames at 200 Hz = 40 ms
+            position = animator.step(toward: target, now: Double(frame) / 200, dt: 1.0 / 200.0).position
+            XCTAssertLessThanOrEqual(position.x, 100, "critically damped: never overshoots")
         }
-        XCTAssertGreaterThan(position.x, 98, "within 2 % after 50 ms")
+        XCTAssertGreaterThan(position.x, 98, "within 2 % after 40 ms")
         XCTAssertLessThanOrEqual(position.x, 100.5, "critically damped: no overshoot")
     }
 

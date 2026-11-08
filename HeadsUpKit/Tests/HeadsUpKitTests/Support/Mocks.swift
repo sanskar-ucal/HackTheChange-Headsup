@@ -74,7 +74,7 @@ final class MockScroll: ScrollController {
 final class MockFeedback: FeedbackService {
     private(set) var cues: [FeedbackCue] = []
     func play(_ cue: FeedbackCue) { cues.append(cue) }
-    func configure(volume: Double, muted: Bool, tickVolume: Double) {}
+    func configure(volume: Double, muted: Bool) {}
 }
 
 @MainActor
@@ -110,15 +110,6 @@ final class MockKeepAlive: BackgroundKeepAlive {
 final class MockFrameClock: FrameClock {
     func start(_ onFrame: @escaping @MainActor (TimeInterval) -> Void) {}
     func stop() {}
-}
-
-@MainActor
-final class MockTargets: TargetProvider {
-    var targets: [ClickTarget] = []
-    func requestTargets(near point: CGPoint, completion: @escaping @MainActor @Sendable ([ClickTarget]) -> Void) {
-        completion(targets)
-    }
-    func invalidate() {}
 }
 
 @MainActor

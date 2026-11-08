@@ -30,7 +30,7 @@ struct PointerSettingsSection: View {
                 .accessibilityLabel("Pointer style \(kind.displayName)")
             }
         }
-        HelpText("Hand changes shape with context: open, pointing over buttons, tapping, scrolling, listening.")
+        HelpText("Green circle is the default. Hand changes shape with context: open, tapping, scrolling, listening.")
 
         HStack(spacing: 10) {
             ForEach(RGBAColor.presets, id: \.self) { preset in
@@ -47,7 +47,7 @@ struct PointerSettingsSection: View {
             Button("Default") { settings.pointerColor = nil }
                 .frame(minHeight: 44)
         }
-        HelpText("Pointer color. Default: white hand, green circle.")
+        HelpText("Pointer color. Default: green circle, white hand.")
 
         ChoiceRow(title: "Size", help: "Pointer size on screen.", selection: $settings.pointerSize,
                   options: PointerSize.allCases) { Text($0.label) }
@@ -85,10 +85,6 @@ struct SoundSettingsSection: View {
         SliderRow(title: "Cue volume", help: "Volume of the confirmation sounds in your AirPods.",
                   value: $settings.feedbackVolume, range: 0...1, step: 0.05, format: "%.0f%%", scale: 100)
         BigToggle(title: "Mute cues", help: "Turn off all confirmation sounds.", isOn: $settings.feedbackMuted)
-        BigToggle(title: "Snap tick", help: "A very soft tick when the pointer snaps to a button.",
-                  isOn: $settings.snapTickEnabled)
-        SliderRow(title: "Snap tick volume", help: "Relative to the cue volume.",
-                  value: $settings.snapTickVolume, range: 0...1, step: 0.05, format: "%.0f%%", scale: 100)
         BigToggle(title: "Spoken prompts", help: "Speak calibration steps and state changes.",
                   isOn: $settings.speechEnabled)
     }
@@ -103,7 +99,7 @@ struct AdvancedSettingsSection: View {
         SliderRow(title: "Filter beta", help: "How much fast movement reduces smoothing lag.",
                   value: $settings.filterBeta, range: 0...0.05, step: 0.001, format: "%.3f")
         SliderRow(title: "Pointer spring", help: "Higher follows the head faster between sensor updates.",
-                  value: $settings.pointerSpringStiffness, range: 1000...20000, step: 500, format: "%.0f")
+                  value: $settings.pointerSpringStiffness, range: 1000...30000, step: 500, format: "%.0f")
         BigToggle(title: "Invert yaw (left/right)", help: "Use if the pointer moves the wrong way sideways.",
                   isOn: $settings.invertYaw)
         BigToggle(title: "Invert pitch (up/down)", help: "Use if the pointer moves the wrong way vertically.",

@@ -8,11 +8,9 @@ import Foundation
 public final class AudioFeedbackService: FeedbackService {
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
-    private let tickPlayer = AVAudioPlayerNode()
     private let format: AVAudioFormat
     private var buffers: [FeedbackCue: AVAudioPCMBuffer] = [:]
     private var muted: Bool
-    private var tickVolume: Float = 0.25
     private var configObserver: NSObjectProtocol?
 
     public init(volume: Double, muted: Bool) {
@@ -23,54 +21,33 @@ public final class AudioFeedbackService: FeedbackService {
         }
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: format)
-        engine.attach(tickPlayer)
-        engine.connect(tickPlayer, to: engine.mainMixerNode, format: format)
         player.volume = Float(volume)
         configObserver = AudioEngineSupport.observeConfigurationChanges(of: engine) { [weak self] in
             self?.restartAfterConfigurationChange()
         }
         AudioEngineSupport.startIfNeeded(engine)
-        if engine.isRunning {
-            player.play()
-            tickPlayer.play()
-        }
+        if engine.isRunning { player.play() }
     }
 
     private func restartAfterConfigurationChange() {
         AudioEngineSupport.startIfNeeded(engine)
         guard engine.isRunning else { return }
         player.play()
-        tickPlayer.play()
     }
 
-    public func configure(volume: Double, muted: Bool, tickVolume: Double) {
+    public func configure(volume: Double, muted: Bool) {
         player.volume = Float(min(max(volume, 0), 1))
         self.muted = muted
-        self.tickVolume = Float(min(max(tickVolume, 0), 1))
     }
 
     public func play(_ cue: FeedbackCue) {
         guard !muted, let buffer = buffers[cue] else { return }
-        if cue == .snapTick {
-            // Ticks get their own quieter player so they never cut off a real cue.
-            playTick(buffer)
-            return
-        }
         if !engine.isRunning {
             AudioEngineSupport.startIfNeeded(engine)
         }
         guard engine.isRunning else { return }
         player.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
         if !player.isPlaying { player.play() }
-    }
-
-    private func playTick(_ buffer: AVAudioPCMBuffer) {
-        guard tickVolume > 0 else { return }
-        if !engine.isRunning { AudioEngineSupport.startIfNeeded(engine) }
-        guard engine.isRunning else { return }
-        tickPlayer.volume = tickVolume * player.volume
-        tickPlayer.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
-        if !tickPlayer.isPlaying { tickPlayer.play() }
     }
 }
 
@@ -110,7 +87,6 @@ enum Earcon {
                     Tone(frequency: 440, duration: 0.05)]                                                         // settling
         case .listeningStart: return [Tone(frequency: 698.5, duration: 0.05), Tone(frequency: 1396.9, duration: 0.08)] // octave up
         case .listeningStop: return [Tone(frequency: 1396.9, duration: 0.05), Tone(frequency: 698.5, duration: 0.08)]  // octave down
-        case .snapTick: return [Tone(frequency: 2093, duration: 0.025)]                                          // soft click
         }
     }
 

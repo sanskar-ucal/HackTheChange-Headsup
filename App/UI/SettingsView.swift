@@ -50,14 +50,8 @@ struct MovementSettingsSection: View {
         SliderRow(title: "Smoothing", help: "Higher is steadier but slightly slower to follow.",
                   value: smoothing, range: 0...1, step: 0.05, format: "%.0f%%", scale: 100,
                   minLabel: "Snappy", maxLabel: "Smooth")
-        SliderRow(title: "Dead zone", help: "Once still, head movement smaller than this doesn't move the pointer.",
-                  value: $settings.deadZoneDegrees, range: 0...2, step: 0.1, format: "%.1f°")
-        BigToggle(title: "Snap to buttons & links", help: "The pointer clings to nearby clickable things.",
-                  isOn: $settings.snapEnabled)
-        SliderRow(title: "Magnet strength", help: "How strongly the pointer is pulled toward a nearby button.",
-                  value: $settings.magnetStrength, range: 0...1, step: 0.05, format: "%.0f%%", scale: 100)
-        SliderRow(title: "Snap radius", help: "How close a button must be before the pointer snaps to it.",
-                  value: $settings.snapRadius, range: 10...100, step: 5, format: "%.0f pt")
+        SliderRow(title: "Dead zone", help: "The pointer doesn't move for changes smaller than this.",
+                  value: $settings.pointerDeadZonePoints, range: 0...10, step: 0.5, format: "%.1f pt")
         BigToggle(title: "Span all displays", help: "Map head movement across every screen instead of the main one.",
                   isOn: $settings.spanAllDisplays)
     }
@@ -76,6 +70,8 @@ struct GestureSettingsSection: View {
                   value: $settings.shakeMinAmplitudeDegrees, range: 2...30, step: 0.5, format: "%.1f°")
         SliderRow(title: "Cooldown", help: "Pause after a gesture before another can trigger.",
                   value: $settings.gestureCooldown, range: 0...2, step: 0.05, format: "%.2f s")
+        SliderRow(title: "Hold after click", help: "The pointer stays still this long after a nod click, like a mouse.",
+                  value: $settings.holdAfterClick, range: 0...1.5, step: 0.05, format: "%.2f s")
         BigToggle(title: "Double nod for scroll mode",
                   help: "Off makes single-nod clicks instant (no wait for a second nod).",
                   isOn: $settings.doubleNodEnabled)

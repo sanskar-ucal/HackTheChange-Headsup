@@ -16,7 +16,6 @@ final class CoordinatorHarness {
     let permissions: MockPermissions
     let store: InMemoryCalibrationStore
     let keepAlive: MockKeepAlive
-    let targets: MockTargets
     let focus: MockFocusReader
     let speech: MockSpeech
     let inserter: MockInserter
@@ -51,7 +50,6 @@ final class CoordinatorHarness {
         permissions.status.accessibilityTrusted = permissionsReady
         store = InMemoryCalibrationStore(calibration: savedCalibration)
         keepAlive = MockKeepAlive()
-        targets = MockTargets()
         focus = MockFocusReader()
         speech = MockSpeech()
         inserter = MockInserter()
@@ -63,7 +61,7 @@ final class CoordinatorHarness {
             dependencies: .init(
                 motionSource: motion, cursor: cursor, scroll: scroll, feedback: feedback, announcer: announcer,
                 permissions: permissions, calibrationStore: store, keepAlive: keepAlive,
-                frameClock: MockFrameClock(), targets: targets, focusReader: focus, speech: speech,
+                frameClock: MockFrameClock(), focusReader: focus, speech: speech,
                 textInserter: inserter,
                 screenGeometry: { CoordinatorHarness.geometry }, isAppActive: { false },
                 clock: { now.value }, schedule: { _, work in work() }, updateSettings: { saved.value.append($0) }),

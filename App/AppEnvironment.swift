@@ -27,9 +27,6 @@ final class AppEnvironment {
             calibrationStore: UserDefaultsCalibrationStore(),
             keepAlive: SilentAudioKeepAlive(),
             frameClock: DisplayLinkFrameClock(),
-            targets: AccessibilityTargetProvider(
-                searchRadius: CGFloat(settings.targetSearchRadius), maxElements: settings.targetMaxElements,
-                messagingTimeout: Float(settings.axMessagingTimeout)),
             focusReader: AXFocusedElementReader(messagingTimeout: Float(settings.axMessagingTimeout)),
             speech: AppleSpeechToTextService(),
             textInserter: AXTextInserter(),

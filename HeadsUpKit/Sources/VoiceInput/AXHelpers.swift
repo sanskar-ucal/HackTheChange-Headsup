@@ -2,7 +2,7 @@ import AppKit
 import ApplicationServices
 import Foundation
 
-/// Thin wrappers over the Accessibility C API. Shared by Targeting and VoiceInput.
+/// Thin wrappers over the Accessibility C API, used by voice input.
 enum AX {
     static func attribute(_ element: AXUIElement, _ name: String) -> CFTypeRef? {
         var value: CFTypeRef?

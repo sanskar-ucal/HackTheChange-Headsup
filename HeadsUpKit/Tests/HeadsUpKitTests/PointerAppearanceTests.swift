@@ -43,9 +43,7 @@ final class PointerAppearanceTests: XCTestCase {
 
     func testContextResolution() {
         XCTAssertEqual(PointerContextResolver.context(for: .init(state: .tracking)), .idle)
-        XCTAssertEqual(PointerContextResolver.context(for: .init(state: .tracking, isSnapped: true)), .hoveringClickable)
-        XCTAssertEqual(PointerContextResolver.context(for: .init(state: .tracking, isSnapped: true, isPressing: true)),
-                       .pressing)
+        XCTAssertEqual(PointerContextResolver.context(for: .init(state: .tracking, isPressing: true)), .pressing)
         XCTAssertEqual(PointerContextResolver.context(for: .init(state: .tracking, scrollDirection: .down)),
                        .scrolling(.down))
         XCTAssertEqual(PointerContextResolver.context(for: .init(state: .scrollMode)), .scrolling(.none))
@@ -56,21 +54,22 @@ final class PointerAppearanceTests: XCTestCase {
         XCTAssertNil(PointerContextResolver.direction(of: .zero))
     }
 
-    func testDefaultsAreHandAndCalm() {
+    func testDefaultsAreGreenCircleAndCalm() {
         let settings = HeadsUpSettings.defaults
-        XCTAssertEqual(settings.pointerStyle, .hand)
-        XCTAssertEqual(settings.resolvedPointerColor, .white)
+        XCTAssertEqual(settings.pointerStyle, .greenCircle, "the v1 halo is the default")
+        XCTAssertEqual(settings.resolvedPointerColor, .green)
         XCTAssertEqual(settings.pointerSize, .large)
         XCTAssertTrue(settings.pointerHighContrast)
         XCTAssertEqual(settings.sensitivity, 0.6)
         XCTAssertEqual(settings.filterMinCutoff, 1.0, "v1 One Euro defaults")
-        XCTAssertEqual(settings.filterBeta, 0.01)
-        XCTAssertEqual(settings.deadZoneDegrees, 0.6)
+        XCTAssertEqual(settings.filterBeta, 0.007)
+        XCTAssertEqual(settings.pointerDeadZonePoints, 3)
+        XCTAssertEqual(settings.holdAfterClick, 0.4)
         XCTAssertFalse(settings.doubleNodEnabled)
         XCTAssertFalse(settings.practiceEnabled)
-        var circle = settings
-        circle.pointerStyle = .greenCircle
-        XCTAssertEqual(circle.resolvedPointerColor, .green)
+        var hand = settings
+        hand.pointerStyle = .hand
+        XCTAssertEqual(hand.resolvedPointerColor, .white)
     }
 
     func testSettingsPersistenceRoundTrip() throws {

@@ -12,17 +12,23 @@ extension AppCoordinator {
         let dt = lastFrameTime.map { timestamp - $0 } ?? 1.0 / 60.0
         lastFrameTime = timestamp
 
-        // During a gesture candidate nothing moves the pointer (see `freezePointer`).
+        if pointerFrozen, let until = freezeUntil, timestamp >= until { releasePointer() }
+
+        // During a gesture (and the hold after a click) nothing moves the pointer.
         if state.allowsPointerMotion, !pointerFrozen, let target = pointerTarget {
-            let step = animator.step(toward: target, now: timestamp, dt: dt)
-            let point = engine?.geometry.clamp(step.position) ?? step.position
-            if let last = lastPostedPoint, hypot(point.x - last.x, point.y - last.y) < CGFloat(settings.minMoveDistance) {
-                // Below the posting threshold: skip.
+            if !animator.isGliding, let current = lastPostedPoint,
+               hypot(target.x - current.x, target.y - current.y) < CGFloat(settings.pointerDeadZonePoints) {
+                animator.place(at: current)  // dead zone: hold still
             } else {
-                postMotion { deps.cursor.move(to: point) }
-                lastPostedPoint = point
-                postedHistory.append(point, at: lastPoseTime)
-                reportLatency(at: timestamp)
+                let step = animator.step(toward: target, now: timestamp, dt: dt)
+                let point = engine?.geometry.clamp(step.position) ?? step.position
+                let last = lastPostedPoint ?? CGPoint(x: CGFloat.infinity, y: 0)
+                // At most one move per frame, and none for sub-pixel changes.
+                if hypot(point.x - last.x, point.y - last.y) >= CGFloat(settings.minMoveDistance) {
+                    postMotion { deps.cursor.move(to: point) }
+                    lastPostedPoint = point
+                    reportLatency(at: timestamp)
+                }
             }
         }
 
@@ -61,7 +67,6 @@ extension AppCoordinator {
     func updatePointerContext() {
         let inputs = PointerContextInputs(
             state: state,
-            isSnapped: isSnapped && state == .tracking,
             isPressing: pressingUntil != nil,
             scrollDirection: PointerContextResolver.direction(of: scrollVelocity),
             holdFraction: holdProgress?.fraction)

@@ -6,7 +6,6 @@ extension AppCoordinator {
     func handle(pose sensorPose: HeadPose) {
         let interval = Self.signposter.beginInterval("pose")
         defer { Self.signposter.endInterval("pose", interval) }
-        lastPoseTime = sensorPose.timestamp
         recorder.record(sensorPose)
         meter.recordSample()
         if !isHeadphonesConnected { handleConnection(.connected) }
@@ -21,7 +20,7 @@ extension AppCoordinator {
         case .needsPermissions, .waitingForHeadphones:
             break
         case .calibrating:
-            handleCalibration(raw)  // raw pose only: no filter, sensitivity, snapping or spring
+            handleCalibration(raw)  // raw pose only: no filter, sensitivity or spring
         case .awaitingRecenter:
             handleTilt(raw)
             if state == .awaitingRecenter { handleAutoRecenter(filtered) }
@@ -122,38 +121,46 @@ extension AppCoordinator {
 
     private func handleTracking(raw: HeadPose, filtered: HeadPose) {
         guard let output = engine?.process(raw: raw, filtered: filtered) else { return }
-        applyGestureFreeze(output)
-        acceptTarget(output.target)
-        isSnapped = output.snapped != nil
-        if output.didSnap && settings.snapTickEnabled { deps.feedback.play(.snapTick) }
+        // A just-released freeze waits for the next (re-filtered) sample as its target.
+        if !applyGestureFreeze(output) { acceptTarget(output.target) }
 
         scrollVelocity = ScrollVelocity.edgePush(output.overshoot, settings: settings)
         if !isNearEdge(output.target) { scrollAnchor = output.target }
-        queryTargetsIfNeeded(output, time: raw.timestamp)
 
-        for case let .perform(gesture, point, onset, snapped) in output.commands {
-            perform(gesture, at: rollbackPoint(enginePoint: point, onset: onset, snapped: snapped))
+        for case let .perform(gesture, point, _) in output.commands {
+            perform(gesture, at: frozenPoint ?? point)
         }
     }
 
-    /// At a gesture onset freeze the real pointer exactly where it is (the spring stops, no
-    /// moves are posted); when the candidate is rejected, motion resumes from there.
-    func applyGestureFreeze(_ output: TrackingEngine.Output) {
+    /// The moment a gesture starts, freeze the real cursor exactly where it is (the spring
+    /// stops and no moves are posted). A rejected candidate releases with a short glide.
+    /// Returns true if the freeze was released on this sample.
+    @discardableResult
+    func applyGestureFreeze(_ output: TrackingEngine.Output) -> Bool {
         if let decision = output.decision { logGesture(decision) }
         if output.didFreeze {
             let here = lastPostedPoint ?? animator.position ?? deps.cursor.currentPosition
             animator.place(at: here)
+            frozenPoint = here
             pointerFrozen = true
-        } else if !output.isFrozen {
-            pointerFrozen = false
+            freezeUntil = nil
+        } else if !output.isFrozen, pointerFrozen, freezeUntil == nil {
+            releasePointer()
+            return true
         }
+        return false
     }
 
-    /// Where a confirmed gesture acts: the snapped target's center, otherwise where the
-    /// pointer actually was just before the gesture began.
-    func rollbackPoint(enginePoint: CGPoint, onset: TimeInterval, snapped: ClickTarget?) -> CGPoint {
-        if let snapped { return snapped.center }
-        return postedHistory.point(at: onset - settings.gestureOnsetLookback) ?? lastPostedPoint ?? enginePoint
+    /// Ends a freeze by gliding (no jump) from the frozen spot to the head-pointed position.
+    /// The smoothing filter still carries the nod's own up/down movement, so it is re-seeded
+    /// from the next raw pose, and the glide goes to that fresh target, not a stale one.
+    func releasePointer() {
+        pointerFrozen = false
+        freezeUntil = nil
+        frozenPoint = nil
+        poseFilter.reset()
+        pointerTarget = nil
+        releaseGlidePending = true
     }
 
     func logGesture(_ decision: GestureDecision) {
@@ -164,6 +171,10 @@ extension AppCoordinator {
     func acceptTarget(_ point: CGPoint) {
         pointerTarget = point
         targetUpdatedAt = deps.clock()
+        if releaseGlidePending, !pointerFrozen {
+            releaseGlidePending = false
+            animator.glide(to: point, duration: settings.releaseGlideDuration)
+        }
         if glideOnNextTarget {
             glideOnNextTarget = false
             animator.glide(to: point, duration: settings.glideDuration)
@@ -174,17 +185,18 @@ extension AppCoordinator {
         lastGesture = gesture
         switch dispatcher.action(for: gesture) {
         case .click:
-            // Click immediately where the pointer was at onset; it hasn't moved since.
+            // Click exactly at the frozen spot, then keep the cursor still like a mouse
+            // ("Hold after click"); `renderFrame` releases it with a glide afterwards.
             postAction { dispatcher.dispatch(gesture, at: point) }
             animator.place(at: point)
             lastPostedPoint = point
-            pointerTarget = point
-            pointerFrozen = false
+            frozenPoint = point
+            pointerFrozen = true
+            freezeUntil = deps.clock() + settings.holdAfterClick
             pressingUntil = deps.clock() + 0.2
             didPerformClick()
         case .escape:
             postAction { dispatcher.dispatch(gesture, at: point) }
-            animator.glide(to: point, duration: settings.rollbackGlideDuration)
         case .toggleScrollMode:
             enterScrollMode()
         case .togglePause:
@@ -199,16 +211,6 @@ extension AppCoordinator {
     private func isNearEdge(_ point: CGPoint) -> Bool {
         let rect = pointingRect.insetBy(dx: settings.scrollEdgeMargin, dy: settings.scrollEdgeMargin)
         return !rect.contains(point)
-    }
-
-    private func queryTargetsIfNeeded(_ output: TrackingEngine.Output, time: TimeInterval) {
-        guard settings.snapEnabled, !output.isFrozen,
-              output.headSpeed <= settings.snapEngageMaxSpeedDegPerSec,
-              time - lastTargetQuery >= settings.targetQueryInterval else { return }
-        lastTargetQuery = time
-        deps.targets.requestTargets(near: output.rawPoint) { [weak self] targets in
-            self?.engine?.magnet.targets = targets
-        }
     }
 
     // MARK: Telemetry

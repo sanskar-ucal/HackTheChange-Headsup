@@ -51,14 +51,16 @@ public final class AppCoordinator: ObservableObject {
     var pointerTarget: CGPoint?
     var lastPostedPoint: CGPoint?
     var lastFrameTime: TimeInterval?
-    /// True from a gesture onset until it is confirmed or rejected: nothing moves the pointer.
+    /// True from a gesture onset until it is rejected, or until `freezeUntil` after a nod
+    /// click: nothing moves the pointer.
     var pointerFrozen = false
-    /// Positions actually posted, stamped with the latest sensor time (for gesture rollback).
-    var postedHistory = CursorHistory(duration: 1.0)
-    var lastPoseTime: TimeInterval = 0
+    var frozenPoint: CGPoint?
+    /// Frame-clock time when the hold after a click ends.
+    var freezeUntil: TimeInterval?
+    /// The next head target is reached with the release glide.
+    var releaseGlidePending = false
     var glideOnNextTarget = false
     var pressingUntil: TimeInterval?
-    var isSnapped = false
     var targetUpdatedAt: TimeInterval?
     var latestLatencyMs: Double?
 
@@ -67,7 +69,6 @@ public final class AppCoordinator: ObservableObject {
     var scrollAnchor: CGPoint?
     var scrollMode: ScrollModeRecognizer?
     var modeRecognizer: DoubleNodRecognizer
-    var lastTargetQuery: TimeInterval = -.infinity
     var voiceTarget: FocusedElement?
     var voiceInsertion: InsertionRecord?
     var voiceReviewStart: TimeInterval?
@@ -100,9 +101,7 @@ public final class AppCoordinator: ObservableObject {
             toleranceDegrees: settings.autoRecenterToleranceDegrees, duration: settings.autoRecenterStillDuration)
         animator = PointerAnimator(stiffness: settings.pointerSpringStiffness)
         modeRecognizer = DoubleNodRecognizer(settings: settings)
-        dependencies.feedback.configure(
-            volume: settings.feedbackVolume, muted: settings.feedbackMuted,
-            tickVolume: settings.snapTickEnabled ? settings.snapTickVolume : 0)
+        dependencies.feedback.configure(volume: settings.feedbackVolume, muted: settings.feedbackMuted)
         dependencies.announcer.isEnabled = settings.speechEnabled
     }
 

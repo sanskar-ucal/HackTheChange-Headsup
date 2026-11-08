@@ -13,7 +13,6 @@ extension AppCoordinator {
         public var calibrationStore: CalibrationStoring
         public var keepAlive: BackgroundKeepAlive
         public var frameClock: FrameClock
-        public var targets: TargetProvider
         public var focusReader: FocusedElementReader
         public var speech: SpeechToTextService
         public var textInserter: TextInserter
@@ -30,7 +29,7 @@ extension AppCoordinator {
             motionSource: MotionSource, cursor: CursorController, scroll: ScrollController,
             feedback: FeedbackService, announcer: Announcer, permissions: PermissionsProviding,
             calibrationStore: CalibrationStoring, keepAlive: BackgroundKeepAlive, frameClock: FrameClock,
-            targets: TargetProvider, focusReader: FocusedElementReader, speech: SpeechToTextService,
+            focusReader: FocusedElementReader, speech: SpeechToTextService,
             textInserter: TextInserter,
             screenGeometry: @escaping @MainActor () -> ScreenGeometry,
             isAppActive: @escaping @MainActor () -> Bool,
@@ -47,7 +46,6 @@ extension AppCoordinator {
             self.calibrationStore = calibrationStore
             self.keepAlive = keepAlive
             self.frameClock = frameClock
-            self.targets = targets
             self.focusReader = focusReader
             self.speech = speech
             self.textInserter = textInserter
@@ -61,7 +59,7 @@ extension AppCoordinator {
 
     // MARK: Settings & screens
 
-    /// Applies new settings live (sensitivity, smoothing, snapping… no recalibration).
+    /// Applies new settings live (sensitivity, smoothing… no recalibration).
     public func apply(settings newSettings: HeadsUpSettings) {
         settings = newSettings
         poseFilter.configure(
@@ -73,16 +71,13 @@ extension AppCoordinator {
         animator.stiffness = newSettings.pointerSpringStiffness
         modeRecognizer.inner.config = NodShakeConfig(settings: newSettings)
         modeRecognizer.config = DoubleNodConfig(settings: newSettings)
-        deps.feedback.configure(
-            volume: newSettings.feedbackVolume, muted: newSettings.feedbackMuted,
-            tickVolume: newSettings.snapTickEnabled ? newSettings.snapTickVolume : 0)
+        deps.feedback.configure(volume: newSettings.feedbackVolume, muted: newSettings.feedbackMuted)
         deps.announcer.isEnabled = newSettings.speechEnabled
         updatePointerContext()
     }
 
     public func refreshGeometry() {
         engine?.geometry = deps.screenGeometry()
-        deps.targets.invalidate()
     }
 
     public var screenGeometry: ScreenGeometry { deps.screenGeometry() }
