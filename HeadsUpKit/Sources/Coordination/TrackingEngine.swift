@@ -140,7 +140,7 @@ public struct TrackingEngine: Sendable {
         let decision = recognizer.inner.decisionCount != decisionsBefore ? recognizer.inner.lastDecision : nil
         return Output(
             target: target, commands: commands,
-            overshoot: isFrozen || preHold ? .zero : mapped.overshoot,
+            overshoot: isFrozen || preHold ? .zero : mapper.map(raw).overshoot,
             isFrozen: isFrozen, didFreeze: didFreeze, decision: decision)
     }
 

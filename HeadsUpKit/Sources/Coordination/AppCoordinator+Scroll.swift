@@ -8,7 +8,6 @@ extension AppCoordinator {
         guard state == .tracking else { return }
         scrollMode = ScrollModeRecognizer(settings: settings)
         modeRecognizer.reset()
-        scrollAnchor = lastPostedPoint ?? deps.cursor.currentPosition
         enter(.scrollMode)
         deps.feedback.play(.scrollOn)
         announce("Scroll mode. Look up or down to scroll. Shake to stop.")

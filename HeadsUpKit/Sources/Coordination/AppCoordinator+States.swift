@@ -127,6 +127,11 @@ extension AppCoordinator {
         body()
     }
 
+    /// Plays the click cue so the user can check the AirPods route and volume.
+    public func playTestSound() {
+        deps.feedback.play(.select)
+    }
+
     func announce(_ text: String) {
         deps.announcer.announce(text)
     }

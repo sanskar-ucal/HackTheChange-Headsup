@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import OSLog
 
 /// Plays programmatically generated earcons through the current output (the AirPods).
 /// All buffers are synthesized up front and the engine and player stay running, so a cue
@@ -13,6 +14,8 @@ public final class AudioFeedbackService: FeedbackService {
     private var muted: Bool
     private var configObserver: NSObjectProtocol?
 
+    private static let log = Logger(subsystem: "com.hackthechange.HeadsUp", category: "audio")
+
     public init(volume: Double, muted: Bool) {
         self.muted = muted
         format = AVAudioFormat(standardFormatWithSampleRate: Earcon.sampleRate, channels: 1)!
@@ -20,31 +23,58 @@ public final class AudioFeedbackService: FeedbackService {
             buffers[cue] = Earcon.buffer(for: Earcon.tones(for: cue), format: format)
         }
         engine.attach(player)
-        engine.connect(player, to: engine.mainMixerNode, format: format)
-        player.volume = Float(volume)
+        player.volume = Self.sanitizedVolume(volume)
         configObserver = AudioEngineSupport.observeConfigurationChanges(of: engine) { [weak self] in
-            self?.restartAfterConfigurationChange()
+            self?.rebuildIfNeeded(reason: "audio configuration changed")
         }
-        AudioEngineSupport.startIfNeeded(engine)
-        if engine.isRunning { player.play() }
+        AudioEngineSupport.observeDefaultOutputChanges { [weak self] in
+            self?.rebuildIfNeeded(reason: "default output changed")
+        }
+        rebuild()
     }
 
-    private func restartAfterConfigurationChange() {
-        AudioEngineSupport.startIfNeeded(engine)
-        guard engine.isRunning else { return }
-        player.play()
+    /// Skips notifications the rebuild itself caused, so re-routing can't loop.
+    private func rebuildIfNeeded(reason: String) {
+        let target = AudioEngineSupport.defaultOutputDevice()
+        if engine.isRunning, target == nil || AudioEngineSupport.currentDevice(of: engine) == target { return }
+        Self.log.info("\(reason, privacy: .public); rebuilding cue engine")
+        rebuild()
+    }
+
+    /// Stops the engine, points it at the current default output (the AirPods when connected),
+    /// reconnects the graph and starts again. A configuration or route change stops the engine
+    /// and can leave stale connections, so a plain `start()` isn't enough.
+    private func rebuild() {
+        engine.stop()
+        if let device = AudioEngineSupport.defaultOutputDevice() {
+            AudioEngineSupport.route(engine, to: device)
+        }
+        engine.disconnectNodeOutput(player)
+        engine.connect(player, to: engine.mainMixerNode, format: format)
+        engine.connect(engine.mainMixerNode, to: engine.outputNode, format: nil)
+        engine.prepare()
+        do {
+            try engine.start()
+            player.play()
+        } catch {
+            Self.log.error("cue engine failed to start: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     public func configure(volume: Double, muted: Bool) {
-        player.volume = Float(min(max(volume, 0), 1))
+        player.volume = Self.sanitizedVolume(volume)
         self.muted = muted
+    }
+
+    /// Out-of-range or zero volumes fall back to the default; "Mute cues" is the way to silence them.
+    static func sanitizedVolume(_ volume: Double) -> Float {
+        guard volume.isFinite, volume > 0 else { return Float(HeadsUpSettings.defaults.feedbackVolume) }
+        return Float(min(volume, 1))
     }
 
     public func play(_ cue: FeedbackCue) {
         guard !muted, let buffer = buffers[cue] else { return }
-        if !engine.isRunning {
-            AudioEngineSupport.startIfNeeded(engine)
-        }
+        if !engine.isRunning { rebuild() }
         guard engine.isRunning else { return }
         player.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
         if !player.isPlaying { player.play() }

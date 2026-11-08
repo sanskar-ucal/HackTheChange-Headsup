@@ -34,7 +34,7 @@ extension AppCoordinator {
 
         if !scrollVelocity.isZero, state == .tracking || state == .scrollMode {
             let sign = settings.naturalScrolling ? 1.0 : -1.0
-            let anchor = scrollAnchor ?? lastPostedPoint ?? deps.cursor.currentPosition
+            let anchor = scrollLocation()
             let frameDt = min(max(dt, 0), 0.05)
             postAction {
                 deps.scroll.scroll(dx: scrollVelocity.horizontal * frameDt * sign,
@@ -72,5 +72,15 @@ extension AppCoordinator {
             holdFraction: holdProgress?.fraction)
         let context = PointerContextResolver.context(for: inputs)
         if context != pointerContext { pointerContext = context }
+    }
+
+    /// Scroll at the cursor, pulled just inside the edge margin: at the screen edge the point
+    /// would otherwise land on the Dock or menu bar instead of the content being read.
+    func scrollLocation() -> CGPoint {
+        let cursor = deps.cursor.currentPosition
+        let content = pointingRect.insetBy(dx: settings.scrollEdgeMargin, dy: settings.scrollEdgeMargin)
+        guard !content.isEmpty else { return cursor }
+        return CGPoint(x: min(max(cursor.x, content.minX), content.maxX),
+                       y: min(max(cursor.y, content.minY), content.maxY))
     }
 }

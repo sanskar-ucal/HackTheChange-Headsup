@@ -14,6 +14,26 @@ final class ScrollingCoordinatorTests: XCTestCase {
         XCTAssertEqual(h.coordinator.pointerContext, .scrolling(.up))
     }
 
+    func testEdgePushScrollsDownWhenLookingPastTheBottom() {
+        let h = CoordinatorHarness.tracking()
+        h.holdStill(1.5, pitch: -25)  // bottom edge at 15°; 10° overshoot
+        XCTAssertLessThan(h.scroll.totalDy, -100, "head down scrolls down")
+        XCTAssertEqual(h.cursor.moves.last?.y ?? -1, 800, accuracy: 1, "pointer pinned at the bottom")
+        XCTAssertEqual(h.coordinator.pointerContext, .scrolling(.down))
+    }
+
+    func testEdgePushEngagesAtDefaultSensitivityJustPastTheEngageZone() {
+        var settings = CoordinatorHarness.testSettings
+        settings.sensitivity = HeadsUpSettings.defaults.sensitivity
+        let h = CoordinatorHarness.tracking(settings: settings)
+        h.holdStill(1.5, pitch: -29)  // bottom edge at 25° (15° / 0.6); 4° overshoot
+        XCTAssertLessThan(h.scroll.totalDy, -50, "a small tilt past the edge already scrolls noticeably")
+    }
+
+    func testEdgeScrollIsOnByDefault() {
+        XCTAssertTrue(HeadsUpSettings.defaults.edgeScrollEnabled)
+    }
+
     func testNoEdgeScrollJustInsideTheEngageZone() {
         let h = CoordinatorHarness.tracking()
         h.holdStill(1.5, pitch: 17)  // 2° past the edge: below the 3° engage overshoot

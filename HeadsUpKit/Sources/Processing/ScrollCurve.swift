@@ -6,10 +6,15 @@ public enum ScrollCurve {
     ///   - angle: degrees past the reference (edge or scroll-mode entry pose), ≥ 0.
     ///   - deadZone: degrees that produce no scrolling.
     ///   - ramp: degrees beyond the dead zone at which `maxSpeed` is reached.
+    ///   - minFraction: share of `maxSpeed` applied the moment the dead zone is passed, so
+    ///     engaging is immediately noticeable instead of starting at ~0.
     /// - Returns: points per second, 0…maxSpeed.
-    public static func speed(beyond angle: Double, deadZone: Double, ramp: Double, maxSpeed: Double) -> Double {
-        let x = min(max((angle - deadZone) / max(ramp, 1e-6), 0), 1)
-        return maxSpeed * x * x
+    public static func speed(beyond angle: Double, deadZone: Double, ramp: Double, maxSpeed: Double,
+                             minFraction: Double = 0) -> Double {
+        guard angle > deadZone else { return 0 }
+        let x = min((angle - deadZone) / max(ramp, 1e-6), 1)
+        let floor = min(max(minFraction, 0), 1)
+        return maxSpeed * (floor + (1 - floor) * x * x)
     }
 }
 
@@ -34,7 +39,8 @@ public struct ScrollVelocity: Sendable, Equatable {
         let maxSpeed = settings.scrollMaxSpeed * settings.scrollSpeed
         func speed(_ angle: Double) -> Double {
             ScrollCurve.speed(beyond: angle, deadZone: settings.scrollEngageOvershootDegrees,
-                              ramp: settings.scrollRampDegrees, maxSpeed: maxSpeed)
+                              ramp: settings.scrollRampDegrees, maxSpeed: maxSpeed,
+                              minFraction: settings.scrollEngageMinFraction)
         }
         var velocity = ScrollVelocity(vertical: speed(overshoot.up) - speed(overshoot.down))
         if settings.horizontalEdgeScroll {

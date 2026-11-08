@@ -66,7 +66,6 @@ public final class AppCoordinator: ObservableObject {
 
     // Modes
     var scrollVelocity = ScrollVelocity.zero
-    var scrollAnchor: CGPoint?
     var scrollMode: ScrollModeRecognizer?
     var modeRecognizer: DoubleNodRecognizer
     var voiceTarget: FocusedElement?

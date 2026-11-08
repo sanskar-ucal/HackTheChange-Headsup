@@ -18,7 +18,17 @@ public struct SettingsPersistence {
 
     public func load() -> HeadsUpSettings {
         guard let data = defaults.data(forKey: key) else { return .defaults }
-        return Self.decodeMerged(data) ?? .defaults
+        return Self.sanitized(Self.decodeMerged(data) ?? .defaults)
+    }
+
+    /// Resets stored values that would silently disable audio cues.
+    static func sanitized(_ settings: HeadsUpSettings) -> HeadsUpSettings {
+        var settings = settings
+        let volume = settings.feedbackVolume
+        if !volume.isFinite || volume <= 0 || volume > 1 {
+            settings.feedbackVolume = HeadsUpSettings.defaults.feedbackVolume
+        }
+        return settings
     }
 
     public func save(_ settings: HeadsUpSettings) {

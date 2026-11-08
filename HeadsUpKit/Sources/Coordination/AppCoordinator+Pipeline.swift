@@ -125,7 +125,6 @@ extension AppCoordinator {
         if !applyGestureFreeze(output) { acceptTarget(output.target) }
 
         scrollVelocity = ScrollVelocity.edgePush(output.overshoot, settings: settings)
-        if !isNearEdge(output.target) { scrollAnchor = output.target }
 
         for case let .perform(gesture, point, _) in output.commands {
             perform(gesture, at: frozenPoint ?? point)
@@ -206,11 +205,6 @@ extension AppCoordinator {
         case .none:
             break
         }
-    }
-
-    private func isNearEdge(_ point: CGPoint) -> Bool {
-        let rect = pointingRect.insetBy(dx: settings.scrollEdgeMargin, dy: settings.scrollEdgeMargin)
-        return !rect.contains(point)
     }
 
     // MARK: Telemetry

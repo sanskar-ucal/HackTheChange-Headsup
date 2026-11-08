@@ -272,7 +272,7 @@ log stream --info --predicate 'subsystem == "com.hackthechange.HeadsUp"'
 - **AirPods microphone.** Using it switches Bluetooth to the low-quality call profile while listening, which also degrades audio cues and can disturb head tracking. So HeadsUp uses the **Mac's built-in microphone** by default (*Use Mac's built-in microphone*). Turn that off to use the current system input instead.
 - **System pointer hiding:** see Pointer styles above.
 - **With double nod turned on, single-nod clicks wait for a possible second nod**, about 0.4 s after the nod is recognized. It's off by default, so clicks are immediate.
-- **Scroll routing.** Scroll events go to the window under the last in-content pointer position. Apps that ignore pixel-precise synthetic scroll events may scroll in coarse steps.
+- **Scroll routing.** Scroll events go to the window under the pointer, kept just inside the screen edge so they never land on the Dock or menu bar. Apps that ignore pixel-precise synthetic scroll events may scroll in coarse steps.
 - **Absolute pointing drift.** Head orientation isn't gaze, and yaw drifts slowly. Recenter with tilt-right or by holding still.
 - Not included: dwell-click, drag, right-click, an on-screen keyboard, voice commands beyond dictation, profiles, signing and notarization.
 

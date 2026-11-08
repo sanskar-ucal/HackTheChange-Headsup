@@ -16,7 +16,9 @@ struct SettingsView: View {
             Section("Gestures") { GestureSettingsSection(settings: $store.settings, coordinator: coordinator) }
             Section("Scrolling") { ScrollSettingsSection(settings: $store.settings) }
             Section("Voice input") { VoiceSettingsSection(settings: $store.settings) }
-            Section("Sound") { SoundSettingsSection(settings: $store.settings) }
+            Section("Sound") {
+                SoundSettingsSection(settings: $store.settings, testSound: { coordinator.playTestSound() })
+            }
             Section("Advanced") {
                 AdvancedSettingsSection(settings: $store.settings, telemetry: telemetry, recorder: recorder)
             }

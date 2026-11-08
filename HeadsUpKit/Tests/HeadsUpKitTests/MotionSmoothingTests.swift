@@ -66,7 +66,7 @@ final class ScrollCurveTests: XCTestCase {
         settings.horizontalEdgeScroll = true
         XCTAssertGreaterThan(ScrollVelocity.edgePush(EdgeOvershoot(left: 8), settings: settings).horizontal, 0)
         settings.scrollSpeed = 2
-        XCTAssertEqual(ScrollVelocity.edgePush(EdgeOvershoot(up: 8), settings: settings).vertical, 750, accuracy: 1e-9)
+        XCTAssertEqual(ScrollVelocity.edgePush(EdgeOvershoot(up: 8), settings: settings).vertical, 930, accuracy: 1e-9)
         settings.edgeScrollEnabled = false
         XCTAssertTrue(ScrollVelocity.edgePush(EdgeOvershoot(up: 20), settings: settings).isZero)
     }

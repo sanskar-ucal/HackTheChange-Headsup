@@ -29,7 +29,9 @@ public final class CGEventScrollController: ScrollController {
         guard wholeX != 0 || wholeY != 0 else { return }
         remainderX -= Double(wholeX)
         remainderY -= Double(wholeY)
-        guard let event = CGEvent(scrollWheelEvent2Source: source, units: .pixel, wheelCount: 2,
+        // Vertical-only scrolls use one wheel; the horizontal axis is added only when needed.
+        let wheels: UInt32 = wholeX == 0 ? 1 : 2
+        guard let event = CGEvent(scrollWheelEvent2Source: source, units: .pixel, wheelCount: wheels,
                                   wheel1: wholeY, wheel2: wholeX, wheel3: 0) else { return }
         // The window server routes scroll events by location: scroll what's under `point`.
         event.location = point

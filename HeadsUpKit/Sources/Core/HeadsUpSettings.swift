@@ -93,6 +93,8 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     public var scrollEngageOvershootDegrees: Double = 3
     /// Degrees past the engage point to reach full speed.
     public var scrollRampDegrees: Double = 10
+    /// Edge-push starts at this share of full speed as soon as it engages (0.08 ≈ 120 pt/s).
+    public var scrollEngageMinFraction: Double = 0.08
     public var scrollModeNeutralDegrees: Double = 2
     public var scrollModeRampDegrees: Double = 12
     /// Scroll mode captures its neutral pose this long after the double nod.
