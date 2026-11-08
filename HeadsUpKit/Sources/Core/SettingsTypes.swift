@@ -90,4 +90,12 @@ public struct RGBAColor: Codable, Sendable, Equatable, Hashable {
 
     /// Swatches offered in Settings.
     public static let presets: [RGBAColor] = [.white, .black, .green, .yellow, .blue, .red, .purple]
+
+    private static let presetNames: [RGBAColor: String] = [
+        .white: "White", .black: "Black", .green: "Green", .yellow: "Yellow",
+        .blue: "Blue", .red: "Red", .purple: "Purple",
+    ]
+
+    /// Name of a preset swatch for VoiceOver; nil for custom colors.
+    public var presetName: String? { Self.presetNames[self] }
 }
