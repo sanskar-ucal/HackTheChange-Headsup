@@ -96,6 +96,7 @@ final class PointerAppearanceTests: XCTestCase {
         let merged = try XCTUnwrap(SettingsPersistence.decodeMerged(partial))
         XCTAssertEqual(merged.sensitivity, 0.9)
         XCTAssertEqual(merged.pointerStyle, .dot)
-        XCTAssertEqual(merged.snapRadius, HeadsUpSettings.defaults.snapRadius)
+        XCTAssertEqual(merged.pointerDeadZonePoints, HeadsUpSettings.defaults.pointerDeadZonePoints,
+                       "keys missing from stored settings take the current defaults")
     }
 }

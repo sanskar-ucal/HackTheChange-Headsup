@@ -75,8 +75,9 @@ public final class AXTextInserter: TextInserter {
         press(Self.returnKey)
     }
 
-    /// Adds a separating space when appending to existing text.
-    static func join(_ original: String, _ text: String) -> String {
+    /// Adds a separating space when appending to existing text. Pure string logic with no
+    /// access to the inserter's state, so it needs no main-actor isolation.
+    nonisolated static func join(_ original: String, _ text: String) -> String {
         if original.isEmpty || original.hasSuffix(" ") { return original + text }
         return original + " " + text
     }
