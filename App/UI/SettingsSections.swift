@@ -29,7 +29,6 @@ struct PointerSettingsSection: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Pointer style \(kind.displayName)")
-                .accessibilityAddTraits(settings.pointerStyle == kind ? .isSelected : [])
             }
         }
         HelpText("Green circle is the default. Hand changes shape with context: open, tapping, scrolling, listening.")
@@ -44,14 +43,10 @@ struct PointerSettingsSection: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Pointer color \(preset.presetName ?? "custom")")
-                .accessibilityAddTraits(settings.pointerColor == preset ? .isSelected : [])
             }
             ColorPicker("Custom", selection: color, supportsOpacity: false)
             Button("Default") { settings.pointerColor = nil }
                 .frame(minHeight: 44)
-                .accessibilityLabel("Default pointer color")
-                .accessibilityAddTraits(settings.pointerColor == nil ? .isSelected : [])
         }
         HelpText("Pointer color. Default: green circle, white hand.")
 

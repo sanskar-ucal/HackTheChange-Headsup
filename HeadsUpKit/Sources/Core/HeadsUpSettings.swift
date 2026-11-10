@@ -53,23 +53,6 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     /// After a nod finishes, wait this long for a second nod before clicking.
     public var doubleNodWait: Double = 0.25
 
-    // MARK: Blink gestures (camera)
-    /// Double blink clicks, triple blink presses Escape. Off by default: the camera only
-    /// runs while this is on and HeadsUp is in use (not paused or calibrating).
-    public var blinkGesturesEnabled: Bool = false
-    /// Longest eyes-open time between blinks of a double/triple blink. A double blink
-    /// clicks after waiting this long for a possible third.
-    public var blinkSequenceWindow: Double = 0.5
-    /// Eye closures shorter than this are ignored (quick reflex blinks, tracking noise).
-    public var blinkMinClosure: Double = 0.1
-    /// Eye closures longer than this are resting, not blinking.
-    public var blinkMaxClosure: Double = 0.45
-    public var blinkCooldown: Double = 0.85
-    /// Eyes count as closed below this fraction of the learned open-eye size…
-    public var blinkClosedRatio: Double = 0.55
-    /// …and open again above this fraction.
-    public var blinkReopenRatio: Double = 0.75
-
     // MARK: Tilt-hold
     public var tiltThresholdDegrees: Double = 20
     public var tiltHoldDuration: Double = 1.5

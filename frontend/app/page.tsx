@@ -1,7 +1,3 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
-import { BlinkGestures } from "@/components/BlinkGestures";
-import { FAQ } from "@/components/FAQ";
 import { Features } from "@/components/Features";
 import { FinalCTA } from "@/components/FinalCTA";
 import { Footer } from "@/components/Footer";
@@ -21,7 +17,6 @@ export default function Home() {
         <Hero />
         <HowItWorks />
         <Gestures />
-        <BlinkGestures />
         <Features />
         <RealLife />
         <Privacy />

@@ -7,17 +7,12 @@ struct SettingsView: View {
     let telemetry: LiveTelemetry
     let recorder: MotionRecorder
     let coordinator: AppCoordinator
-    let permissions: PermissionsProviding
 
     var body: some View {
         Form {
             Section("Pointer") { PointerSettingsSection(settings: $store.settings) }
             Section("Movement") { MovementSettingsSection(settings: $store.settings) }
             Section("Gestures") { GestureSettingsSection(settings: $store.settings, coordinator: coordinator) }
-            Section("Blink gestures") {
-                BlinkSettingsSection(settings: $store.settings, coordinator: coordinator,
-                                     telemetry: telemetry, permissions: permissions)
-            }
             Section("Scrolling") { ScrollSettingsSection(settings: $store.settings) }
             Section("Voice input") { VoiceSettingsSection(settings: $store.settings) }
             Section("Sound") {

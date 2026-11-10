@@ -38,8 +38,7 @@ final class AppEnvironment {
                     MainActor.assumeIsolated { work() }
                 }
             },
-            updateSettings: { [weak store] in store?.settings = $0 },
-            blinkSource: CameraBlinkSource())
+            updateSettings: { [weak store] in store?.settings = $0 })
         coordinator = AppCoordinator(dependencies: dependencies, settings: settings)
 
         settingsStore.$settings

@@ -18,7 +18,6 @@ final class CoordinatorHarness {
     let focus: MockFocusReader
     let speech: MockSpeech
     let inserter: MockInserter
-    let blink: MockBlinkSource
     let coordinator: AppCoordinator
     private(set) var clock = 0.0
     private let now: Box<Double>
@@ -51,7 +50,6 @@ final class CoordinatorHarness {
         focus = MockFocusReader()
         speech = MockSpeech()
         inserter = MockInserter()
-        blink = MockBlinkSource()
         let now = Box(0.0)
         let saved = Box([HeadsUpSettings]())
         self.now = now
@@ -63,8 +61,7 @@ final class CoordinatorHarness {
                 frameClock: MockFrameClock(), focusReader: focus, speech: speech,
                 textInserter: inserter,
                 screenGeometry: { CoordinatorHarness.geometry }, isAppActive: { false },
-                clock: { now.value }, schedule: { _, work in work() }, updateSettings: { saved.value.append($0) },
-                blinkSource: blink),
+                clock: { now.value }, schedule: { _, work in work() }, updateSettings: { saved.value.append($0) }),
             settings: settings)
     }
 
@@ -96,25 +93,6 @@ final class CoordinatorHarness {
         feed(duration, yaw: [S.constant(yaw), S.noise(1)], pitch: [S.constant(pitch), S.noise(2)])
     }
 
-    /// Feeds camera eye readings at 30 Hz on the shared clock, rendering a frame after each.
-    /// Eyes are closed during `closed` (seconds from now); `readings` overrides frames,
-    /// e.g. a lost face. `stale` delivers through the handler of an already stopped camera.
-    func feedEyes(_ duration: Double, closed: [ClosedRange<Double>] = [],
-                  readings: [(ClosedRange<Double>, EyeReading)] = [], stale: Bool = false) {
-        let step = 1.0 / 30
-        for index in 0..<Int((duration / step).rounded()) {
-            let t = Double(index) * step
-            var reading = EyeReading.eyes(openness: closed.contains { $0.contains(t) } ? 0.08 : 0.32)
-            if let override = readings.first(where: { $0.0.contains(t) }) { reading = override.1 }
-            now.value = clock + t
-            let event = BlinkSourceEvent.observation(EyeObservation(timestamp: clock + t, reading: reading))
-            if stale { blink.emitStale(event) } else { blink.emit(event) }
-            coordinator.renderFrame(at: clock + t)
-        }
-        clock += duration
-    }
-
-    /// Saved calibration → connect → auto-recenter by holding still → tracking.
     static func tracking(settings: HeadsUpSettings = testSettings) -> CoordinatorHarness {
         let harness = CoordinatorHarness(savedCalibration: calibration, settings: settings)
         harness.coordinator.refreshPermissions()

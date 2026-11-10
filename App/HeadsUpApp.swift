@@ -60,8 +60,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 store: environment.settingsStore,
                 telemetry: environment.coordinator.telemetry,
                 recorder: environment.coordinator.recorder,
-                coordinator: environment.coordinator,
-                permissions: environment.permissions)
+                coordinator: environment.coordinator)
         }
     }
 

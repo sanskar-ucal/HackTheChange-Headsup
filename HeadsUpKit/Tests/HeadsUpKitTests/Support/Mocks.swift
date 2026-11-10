@@ -96,49 +96,6 @@ final class MockPermissions: PermissionsProviding {
     func requestSpeechRecognition() {}
     func openMicrophoneSettings() {}
     func openSpeechRecognitionSettings() {}
-    func openCameraSettings() {}
-}
-
-@MainActor
-final class MockBlinkSource: BlinkSource {
-    var authorization = AuthorizationState.authorized
-    /// The answer a permission prompt gives.
-    var grantsAccess = true
-    private(set) var startCount = 0
-    private(set) var stopCount = 0
-    private(set) var requestCount = 0
-    private var handler: (@MainActor @Sendable (BlinkSourceEvent) -> Void)?
-    /// Kept after `stop()` to simulate events still in flight from the camera queues.
-    private var lastHandler: (@MainActor @Sendable (BlinkSourceEvent) -> Void)?
-
-    var isRunning: Bool { handler != nil }
-
-    func requestAccess(_ completion: @escaping @MainActor @Sendable (Bool) -> Void) {
-        requestCount += 1
-        authorization = grantsAccess ? .authorized : .denied
-        completion(grantsAccess)
-    }
-
-    func start(onEvent: @escaping @MainActor @Sendable (BlinkSourceEvent) -> Void) {
-        startCount += 1
-        handler = onEvent
-        lastHandler = onEvent
-        switch authorization {
-        case .authorized: onEvent(.status(.running))
-        case .notDetermined:
-            requestAccess { granted in onEvent(.status(granted ? .running : .denied)) }
-        case .denied: onEvent(.status(.denied))
-        case .restricted: onEvent(.status(.restricted))
-        }
-    }
-
-    func stop() {
-        stopCount += 1
-        handler = nil
-    }
-
-    func emit(_ event: BlinkSourceEvent) { handler?(event) }
-    func emitStale(_ event: BlinkSourceEvent) { lastHandler?(event) }
 }
 
 @MainActor
