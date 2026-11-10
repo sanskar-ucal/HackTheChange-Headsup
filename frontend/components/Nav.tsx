@@ -1,9 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useState } from "react";
+import { setupNavLink } from "@/content/setup";
 import { nav } from "@/content/site";
 import { DOWNLOAD_URL } from "@/site.config";
 import { DownloadIcon, Wordmark } from "./ui";
+
+/** Section anchors point at the home page, so the nav also works on /setup. */
+const toHome = (href: string) => (href.startsWith("#") ? `/${href}` : href);
+const links = [...nav.links.map((l) => ({ ...l, href: toHome(l.href) })), setupNavLink];
 
 export function Nav() {
   const [open, setOpen] = useState(false);
@@ -19,16 +25,16 @@ export function Nav() {
   return (
     <header className="sticky top-0 z-50 border-b border-line/70 bg-paper/85 backdrop-blur-md supports-[backdrop-filter]:bg-paper/75">
       <nav aria-label="Main" className="mx-auto flex h-[4.25rem] max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
-        <a href="#top" className="-ml-2 inline-flex min-h-11 items-center rounded-lg px-2" aria-label="HeadsUp, back to top">
+        <Link href="/#top" className="-ml-2 inline-flex min-h-11 items-center rounded-lg px-2" aria-label="HeadsUp, back to top">
           <Wordmark />
-        </a>
+        </Link>
 
         <ul className="hidden items-center gap-1 md:flex">
-          {nav.links.map((l) => (
+          {links.map((l) => (
             <li key={l.href}>
-              <a href={l.href} className="inline-flex min-h-11 items-center rounded-full px-4 text-[0.95rem] text-ink-soft transition-colors hover:bg-white hover:text-ink">
+              <Link href={l.href} className="inline-flex min-h-11 items-center rounded-full px-4 text-[0.95rem] text-ink-soft transition-colors hover:bg-white hover:text-ink">
                 {l.label}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
@@ -58,11 +64,11 @@ export function Nav() {
 
       <div id={menuId} hidden={!open} className="border-t border-line/70 bg-paper md:hidden">
         <ul className="mx-auto flex max-w-6xl flex-col px-5 py-3">
-          {nav.links.map((l) => (
+          {links.map((l) => (
             <li key={l.href}>
-              <a href={l.href} onClick={() => setOpen(false)} className="flex min-h-12 items-center rounded-lg px-2 text-lg">
+              <Link href={l.href} onClick={() => setOpen(false)} className="flex min-h-12 items-center rounded-lg px-2 text-lg">
                 {l.label}
-              </a>
+              </Link>
             </li>
           ))}
           <li className="pt-2">
