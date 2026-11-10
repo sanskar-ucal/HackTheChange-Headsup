@@ -11,6 +11,26 @@ export const hero = {
   eyebrow: "Hands-free Mac mouse",
   headline: "Your head is *the mouse.*",
   subline:
+    "HeadsUp turns the AirPods already in your ears into a hands-free mouse for your Mac, made for people who can't use their hands.",
+  primaryCta: "Download for macOS",
+  secondaryCta: "View on GitHub",
+  smallPrint: ["Free & open source", "macOS 14+", "AirPods with head tracking"],
+};
+
+/** Honest facts only: no stats, reviews or download counts. */
+export const quickFacts = [
+  { strong: "3", rest: " head gestures" },
+  { strong: "Camera", rest: " optional" },
+  { strong: "Runs", rest: " on-device" },
+  { strong: "Free", rest: " & open source" },
+];
+
+export const demo = {
+  eyebrow: "See it in action",
+  titleStart: "Point, nod,",
+  titleEmphasis: "done.",
+  body: "A short tour of everyday HeadsUp use: looking around the screen, nodding to click, and speaking into a search field.",
+  fallbackCaption: "Preview animation. The full demo video plays here when it is available.",
     "HeadsUp is built for people with tetraplegia. Turn your head to move the pointer and nod to click, using the AirPods already in your ears.",
   cta: "View on GitHub",
   facts: ["macOS 14 or later", "AirPods with head tracking", "Free, code on GitHub"],
@@ -23,6 +43,7 @@ export const howItWorks = {
   steps: [
     {
       title: "Put in your AirPods",
+      body: "Any AirPods with head tracking work. HeadsUp reads their motion sensors. No extra hardware, and no camera unless you turn on blink gestures.",
       body: "HeadsUp reads the motion sensors in AirPods with head tracking. You don't need a camera or extra hardware to point.",
     },
     {

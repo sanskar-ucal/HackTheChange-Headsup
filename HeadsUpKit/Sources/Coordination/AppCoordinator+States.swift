@@ -91,6 +91,8 @@ extension AppCoordinator {
         case .needsPermissions, .waitingForHeadphones: deps.keepAlive.stop()
         default: deps.keepAlive.start()
         }
+        resetBlinkSequence()
+        updateBlinkCapture()
         updatePointerContext()
     }
 

@@ -140,7 +140,7 @@ extension AppCoordinator {
             frozenPoint = here
             pointerFrozen = true
             freezeUntil = nil
-        } else if !output.isFrozen, pointerFrozen, freezeUntil == nil {
+        } else if !output.isFrozen, pointerFrozen, freezeUntil == nil, output.commands.isEmpty {
             releasePointer()
             return true
         }
@@ -175,7 +175,7 @@ extension AppCoordinator {
         }
     }
 
-    private func perform(_ gesture: HeadGesture, at point: CGPoint) {
+    func perform(_ gesture: HeadGesture, at point: CGPoint) {
         lastGesture = gesture
         switch dispatcher.action(for: gesture) {
         case .click:

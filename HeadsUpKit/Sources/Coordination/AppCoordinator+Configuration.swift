@@ -21,6 +21,8 @@ extension AppCoordinator {
         public var clock: @MainActor () -> TimeInterval
         public var schedule: @MainActor (TimeInterval, @escaping @MainActor @Sendable () -> Void) -> Void
         public var updateSettings: @MainActor (HeadsUpSettings) -> Void
+        /// Camera eye tracking for blink gestures; nil on Macs/builds without it.
+        public var blinkSource: BlinkSource?
 
         public init(
             motionSource: MotionSource, cursor: CursorController, scroll: ScrollController,
@@ -32,7 +34,8 @@ extension AppCoordinator {
             isAppActive: @escaping @MainActor () -> Bool,
             clock: @escaping @MainActor () -> TimeInterval,
             schedule: @escaping @MainActor (TimeInterval, @escaping @MainActor @Sendable () -> Void) -> Void,
-            updateSettings: @escaping @MainActor (HeadsUpSettings) -> Void
+            updateSettings: @escaping @MainActor (HeadsUpSettings) -> Void,
+            blinkSource: BlinkSource? = nil
         ) {
             self.motionSource = motionSource
             self.cursor = cursor
@@ -51,12 +54,14 @@ extension AppCoordinator {
             self.clock = clock
             self.schedule = schedule
             self.updateSettings = updateSettings
+            self.blinkSource = blinkSource
         }
     }
 
     // MARK: Settings & screens
 
     public func apply(settings newSettings: HeadsUpSettings) {
+        let wasBlinkEnabled = settings.blinkGesturesEnabled
         settings = newSettings
         poseFilter.configure(
             minCutoff: newSettings.filterMinCutoff, beta: newSettings.filterBeta, dCutoff: newSettings.filterDCutoff)
@@ -69,6 +74,7 @@ extension AppCoordinator {
         modeRecognizer.config = DoubleNodConfig(settings: newSettings)
         deps.feedback.configure(volume: newSettings.feedbackVolume, muted: newSettings.feedbackMuted)
         deps.announcer.isEnabled = newSettings.speechEnabled
+        applyBlinkSettings(newSettings, turningOn: !wasBlinkEnabled && newSettings.blinkGesturesEnabled)
         updatePointerContext()
     }
 

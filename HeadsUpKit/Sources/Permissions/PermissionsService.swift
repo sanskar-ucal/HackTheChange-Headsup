@@ -50,6 +50,7 @@ public protocol PermissionsProviding: AnyObject {
     func requestSpeechRecognition()
     func openMicrophoneSettings()
     func openSpeechRecognitionSettings()
+    func openCameraSettings()
 }
 
 /// Reads and requests permissions from macOS.
@@ -95,6 +96,10 @@ public final class SystemPermissionsService: PermissionsProviding {
 
     public func openSpeechRecognitionSettings() {
         open("x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition")
+    }
+
+    public func openCameraSettings() {
+        open("x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")
     }
 
     private func open(_ string: String) {

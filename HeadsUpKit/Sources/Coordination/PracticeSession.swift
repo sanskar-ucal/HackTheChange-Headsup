@@ -38,10 +38,11 @@ public struct PracticeSession: Sendable, Equatable {
     @discardableResult
     public mutating func update(pointer: NormalizedPoint, aspect: Double, time: TimeInterval) -> Bool {
         guard phase == .running else { return false }
+        // The first sample starts the session clock; report it so the caller keeps it.
+        var changed = startTime == nil
         let start = startTime ?? time
         startTime = start
         let index = targetIndex(at: pointer, aspect: aspect)
-        var changed = false
         if index != insideIndex {
             if let left = insideIndex, !targets[left].hit { overshoots += 1 }
             if let entered = index, targets[entered].reachTime == nil {

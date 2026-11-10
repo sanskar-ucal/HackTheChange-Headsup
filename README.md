@@ -53,6 +53,7 @@ HeadsUp needs two permissions, plus two optional ones for voice search. The setu
 | **Motion & Fitness** | Required | Lets HeadsUp read head movement from the AirPods | macOS asks the first time the AirPods send motion: click **Allow**. To change it later: *Privacy & Security* → **Motion & Fitness** → **HeadsUp** |
 | **Microphone** | Optional | Voice search: speak into search fields | macOS asks the first time voice input starts. Later: *Privacy & Security* → **Microphone** → **HeadsUp** |
 | **Speech Recognition** | Optional | Turns speech into text, on the Mac when supported | macOS asks together with the microphone. Later: *Privacy & Security* → **Speech Recognition** → **HeadsUp** |
+| **Camera** | Optional | Blink gestures: double blink clicks, triple blink presses Escape | macOS asks when you turn on **Settings → Blink gestures**. Later: *Privacy & Security* → **Camera** → **HeadsUp** |
 
 > **The toggle is on, but it still doesn't work?** This often happens after updating or replacing the app, because macOS remembers the old copy.
 > 1. Quit HeadsUp (menu-bar icon → **Quit**).
@@ -81,13 +82,15 @@ HeadsUp remembers the calibration. On later launches, look at the middle of the 
 | **Look past the top or bottom edge** | Scroll |
 | **Tilt left and hold** (1.5 s) | Pause / resume |
 | **Tilt right and hold** (1.5 s) | Recenter |
+| **Double blink** (optional, Mac camera) | Click |
+| **Triple blink** (optional, Mac camera) | Escape |
 | Caregiver keyboard: **⌃⌥⌘H** | Pause / resume |
 
 Full details: see the [Gesture cheat-sheet](#gesture-cheat-sheet) section below.
 
 ### 7. Build from source
 
-For developers. Requires **Xcode 15 or later** and [Homebrew](https://brew.sh).
+For developers. Requires **Xcode 15.3 or later** (Swift 5.10, needed by `HeadsUpKit/Package.swift`) and [Homebrew](https://brew.sh).
 
 ```sh
 brew install xcodegen
@@ -105,6 +108,30 @@ cd HeadsUpKit && swift test
 
 [Build & run](#build--run) below covers running without AirPods and more.
 
+### 8. Troubleshooting
+
+| Problem | What to try |
+|---|---|
+| **The pointer doesn't move** | 1. Check that **Motion & Fitness** is allowed (step 4). 2. Check that the AirPods are connected *and* selected as the sound output. Take them out and put them back in if needed. 3. **Recenter**: tilt right and hold, or look at the middle of the screen and hold still. 4. Make sure HeadsUp isn't paused: tilt left and hold, or press ⌃⌥⌘H. |
+| **The pointer moves but clicks don't work** | The **Accessibility** permission is missing or stale. Remove HeadsUp from the Accessibility list and add it back (step 4), then reopen HeadsUp. |
+| **The pointer slowly drifts** | This is normal over time (head tracking isn't eye tracking). **Tilt right and hold** to recenter. If it keeps happening, run calibration again from the menu-bar icon. |
+| **Voice input doesn't start** | Allow **Microphone** and **Speech Recognition** (step 4). Voice only starts after you nod-click into a text or search field, and never in password fields. Some apps don't expose their fields to macOS, so voice can't start there. |
+| **The pointer is too fast or too slow** | Menu-bar icon → *Settings* → **Sensitivity** (see [Tuning](#tuning)). |
+| **No confirmation sounds** | Check that the AirPods are the sound output, then menu-bar icon → *Settings* → *Sound*: turn **Mute cues** off and raise **Cue volume**. |
+| **Permissions stop working after every rebuild** (developers) | Source builds are ad-hoc signed, so macOS treats each build as a new app. Clear the stale grant with `tccutil reset Accessibility com.hackthechange.HeadsUp`, allow it again, or set `DEVELOPMENT_TEAM` in `project.yml` for a stable signature. |
+
+### 9. Website
+
+The landing page lives in [`frontend/`](frontend/) and is a Next.js static export.
+
+```sh
+cd frontend && npm i && npm run dev     # http://localhost:3000
+npm run build                           # static site in frontend/out
+```
+
+Set the repository URL once, as `GITHUB_URL` in [`frontend/site.config.ts`](frontend/site.config.ts). Every download button and GitHub link uses it. To show the demo video, add `frontend/public/demo.mp4` (and optionally `frontend/public/demo-poster.jpg`).
+
+**Deploy to Vercel:** import the repo, set **Root Directory** to `frontend`, and keep the defaults (framework: Next.js). Nothing else needs configuring.
 ## Gesture cheat-sheet
 
 | Gesture | Action |
@@ -116,7 +143,11 @@ cd HeadsUpKit && swift test
 | **Edge push** | Keep looking past the top or bottom edge (more than 3°) to scroll. Optionally left/right too. |
 | **Tilt left and hold** 1.5 s | Pause / resume. Works in every mode, including while listening. |
 | **Tilt right and hold** 1.5 s | Recenter: your current pose becomes "center". |
+| **Double blink** | Left click at the pointer, like a nod. Needs **Settings → Blink gestures** turned on (off by default). |
+| **Triple blink** | Press `Escape`, like a shake. A triple blink never clicks first. |
 | **⌃⌥⌘H** (caregiver keyboard) | Pause / resume |
+
+**Blink gestures (optional).** An alternative to nod and shake that uses the Mac's camera. Turn it on in **Settings → Blink gestures** and allow camera access. Blink twice (or three times) in quick succession: a double blink clicks after waiting about half a second for a possible third blink. Ordinary single blinks, eyes resting closed, and a second face in view never act. The camera runs only while blink gestures are on and HeadsUp is tracking; pausing turns it off. Video is analyzed on the Mac only to measure how open the eyes are: nothing is saved or sent, and faces are never identified. Blink actions work while tracking; in voice input and scroll mode use nod and shake.
 
 **Voice input.** Nod-click into a search field, and HeadsUp starts listening: a mic badge appears on the pointer and your words show in a bubble. Stop talking for 1.5 s, or nod, and the text is inserted. Then:
 - **nod** presses Return (runs the search)
@@ -176,6 +207,9 @@ The App Sandbox is **off**: posting input events and reading other apps' accessi
 | Nods not detected | Lower **Nod/shake speed** and **Nod size** |
 | Scrolling too fast / slow | **Scroll speed**; **Edge push distance** sets how far past the edge to look before scrolling starts |
 | Pointer moves the wrong way | **Advanced → Invert** toggles |
+| Blinks aren't counted | Watch the live indicator in **Blink gestures**. Raise **Eye-closed threshold** (helps with glasses), lower **Shortest blink**, and face the camera in even light |
+| Ordinary blinks start a click | Raise **Shortest blink** and lower **Time between blinks** |
+| Triple blinks click instead of cancel | Raise **Time between blinks** so the third blink still counts |
 
 Every Settings control has a 44 pt target, and sliders have −/+ buttons, so Settings itself can be used with head pointing and nods.
 
@@ -190,7 +224,7 @@ MotionSource → PoseFilter (One Euro) → PointerMapper (pure mapping × sensit
 ```
 
 - Every tunable (gains, thresholds, timings, pointer appearance) lives in one `HeadsUpSettings` model, persisted to `UserDefaults` (key `HeadsUp.settings.v2`).
-- `HeadsUpKit/` holds all the logic: `Core`, `MotionInput`, `Processing`, `Gestures`, `Output`, `Permissions`, `PointerAppearance`, `Targeting`, `VoiceInput`, `Coordination`. `App/` is the SwiftUI and AppKit shell.
+- `HeadsUpKit/` holds all the logic: `Core`, `MotionInput`, `Processing`, `Gestures`, `Output`, `Permissions`, `PointerAppearance`, `VoiceInput`, `Coordination`. `App/` is the SwiftUI and AppKit shell.
 - **Rendering is decoupled from the sensor rate.** Samples arrive at 25–50 Hz and only update the target. A display-synced `CADisplayLink` (`NSScreen.displayLink`, macOS 14) moves the real pointer with a critically damped spring (about 40 ms settle, no overshoot). It posts at most one move per frame, and doesn't move at all when the target is under 3 pt from the cursor (dead zone). Resume/recenter glide in 150 ms.
 - **Nods never drag the pointer.** Gestures are recognized from the raw sensor pose. Fast up/down head movement holds the pointer even before the nod threshold is reached, and the moment a nod starts the cursor freezes (target, spring and edge scrolling). A confirmed nod clicks exactly at the frozen spot, holds still for 400 ms, then glides (120 ms) to the head-pointed position, with the smoothing filter re-seeded so the nod's own dip never shows. A rejected nod releases the same way, without a jump. If display frames stop arriving, the sensor loop renders instead.
 - **Profiling.** `os_signpost` intervals named `pose` and `frame`, plus a `sample-to-cursor` event, appear under *Points of Interest* in Instruments. The live readout shows the latency.
@@ -201,6 +235,26 @@ MotionSource → PoseFilter (One Euro) → PointerMapper (pure mapping × sensit
 
   Moves are posted only in `tracking` and `practicing`. Clicks, keys, scrolling and text only in `tracking`, `scrollMode`, `listening` and `voiceReview`.
 
+## Checking background delivery
+
+While active, HeadsUp keeps a `ProcessInfo` activity (so App Nap can't throttle it) and a silent `AVAudioEngine` stream (so the AirPods stay the audio route). Check **Settings → Advanced → Live readout → Background check** after switching apps, or run:
+
+```sh
+log stream --info --predicate 'subsystem == "com.hackthechange.HeadsUp"'
+```
+
+## Known limitations
+
+- **Accessibility coverage varies by app.** Voice-field detection depends on what each app exposes. Native AppKit apps, Safari and Chrome (after `AXManualAccessibility`) are good. Some custom-drawn or game UIs expose nothing. Setting a web field's value through AX doesn't always fire the page's input events. HeadsUp checks that the value stuck and otherwise types the text with key events.
+- **Speech focus detection** runs 150 ms after a HeadsUp click, plus on focus-change notifications within 1 s after a click. Fields that focus later are missed.
+- **AirPods microphone.** Using it switches Bluetooth to the low-quality call profile while listening, which also degrades audio cues and can disturb head tracking. So HeadsUp uses the **Mac's built-in microphone** by default (*Use Mac's built-in microphone*). Turn that off to use the current system input instead.
+- **System pointer hiding:** see Pointer styles above.
+- **With double nod turned on, single-nod clicks wait for a possible second nod**, about 0.4 s after the nod is recognized. It's off by default, so clicks are immediate.
+- **Scroll routing.** Scroll events go to the window under the last in-content pointer position. Apps that ignore pixel-precise synthetic scroll events may scroll in coarse steps.
+- **Absolute pointing drift.** Head orientation isn't gaze, and yaw drifts slowly. Recenter with tilt-right or by holding still.
+- **Blink detection depends on the camera view.** Dim light, strong backlight, glare on glasses or turning the head far from the camera (about 40°) can hide the eyes; HeadsUp then ignores blinks rather than guessing. A double blink clicks only after the third-blink wait (*Time between blinks*, 0.5 s by default).
+- Not included: dwell-click, drag, right-click, an on-screen keyboard, voice commands beyond dictation, profiles, signing and notarization.
+
 ## Tests
 
 `swift test` in `HeadsUpKit/` covers:
@@ -210,5 +264,6 @@ MotionSource → PoseFilter (One Euro) → PointerMapper (pure mapping × sensit
 - **Calibration & voice:** calibration (median capture, moving capture rejected, center drift check); practice suggestions; text-field classification
 - **Nod clicks:** a nod clicks at the onset point with zero cursor movement from onset until 400 ms after the click, then glides to the head position; rejected nods release without a jump
 - **Coordinator:** the full state machine with mocks: permissions, calibration, practice, pause/resume, disconnect, edge and mode scrolling, voice flow (listen → Return / undo / keep), and "no events while paused or dictating"
+- **Blink gestures:** double blink selects only after the third-blink window, triple blink cancels without selecting, ordinary blinking never acts, cooldown, face loss and frame gaps reset a sequence; the open-eye baseline and hysteresis; the camera runs only while enabled and tracking, and stale or denied camera events never act
 
 Fixtures are regenerated with `python scripts/generate_fixtures.py`.
