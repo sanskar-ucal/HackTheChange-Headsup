@@ -1,11 +1,9 @@
 import Foundation
 
-/// Every tunable number in HeadsUp. Angles are degrees, durations seconds and distances
-/// points here (human-friendly for the Settings UI); components convert internally.
+/// Every tunable number in HeadsUp.
 public struct HeadsUpSettings: Codable, Equatable, Sendable {
     // MARK: Pointing
-    /// 0.25…1.5. At 1.0 the calibrated corners reach the screen corners; lower values
-    /// need more head turn for the same pointer travel (calmer).
+    /// 0.25…1.5.
     public var sensitivity: Double = 0.6
     /// false = map to the main display only; true = map to the union of all displays.
     public var spanAllDisplays: Bool = false
@@ -46,10 +44,9 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     /// The rollback point is taken this long before the gesture onset.
     public var gestureOnsetLookback: Double = 0.1
     public var cursorHistoryDuration: Double = 0.6
-    /// Raw pitch-dominant head speed at which the cursor already stops following, so the
-    /// first samples of a nod (before the onset threshold) don't move it.
+    /// Raw pitch-dominant head speed at which the cursor already stops following, so the first samples of a nod.
     public var nodPreHoldRateDegPerSec: Double = 30
-    /// Double nod toggles in-place scroll mode. Off = single nods click with no delay.
+    /// Double nod toggles in-place scroll mode.
     public var doubleNodEnabled: Bool = false
     /// Both nods must start within this window.
     public var doubleNodWindow: Double = 0.9
@@ -101,7 +98,7 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     // MARK: Scrolling
     public var edgeScrollEnabled: Bool = true
     public var horizontalEdgeScroll: Bool = false
-    /// On: looking up reveals content above. Off: inverted.
+    /// On: looking up reveals content above.
     public var naturalScrolling: Bool = true
     /// Multiplier on scroll speed (slider).
     public var scrollSpeed: Double = 1.0
@@ -110,6 +107,8 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     public var scrollEngageOvershootDegrees: Double = 3
     /// Degrees past the engage point to reach full speed.
     public var scrollRampDegrees: Double = 10
+    /// Edge-push starts at this share of full speed as soon as it engages (0.08 ≈ 120 pt/s).
+    public var scrollEngageMinFraction: Double = 0.08
     public var scrollModeNeutralDegrees: Double = 2
     public var scrollModeRampDegrees: Double = 12
     /// Scroll mode captures its neutral pose this long after the double nod.
@@ -135,6 +134,8 @@ public struct HeadsUpSettings: Codable, Equatable, Sendable {
     public var pointerHighContrast: Bool = true
     /// Experimental: hide the system arrow while tracking (see README).
     public var hideSystemCursor: Bool = false
+    /// Floating "Top" button near the top-right corner: nodding on it scrolls the frontmost app to the top.
+    public var showScrollToTopButton: Bool = true
 
     /// Accessibility request timeout for voice input's focused-field checks.
     public var axMessagingTimeout: Double = 0.05

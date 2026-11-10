@@ -1,9 +1,7 @@
 import Foundation
 
-/// Replays recorded or synthetic poses. Used by tests and for debugging without AirPods
-/// (launch the app with `HEADSUP_REPLAY=/path/to/trace.csv`).
+/// Replays recorded or synthetic poses.
 public final class ReplayMotionSource: MotionSource, @unchecked Sendable {
-    // @unchecked: `task` is only touched from start()/stop() on the main actor.
     public let poses: AsyncStream<HeadPose>
     public let connectionChanges: AsyncStream<HeadphoneConnection>
     public let isMotionAvailable = true
@@ -15,9 +13,6 @@ public final class ReplayMotionSource: MotionSource, @unchecked Sendable {
     private let loops: Bool
     private var task: Task<Void, Never>?
 
-    /// - Parameters:
-    ///   - realtime: sleep between samples using their timestamps; otherwise emit at once.
-    ///   - loops: restart from the beginning when the trace ends (timestamps keep increasing).
     public init(poses trace: [HeadPose], realtime: Bool = true, loops: Bool = false) {
         self.trace = trace
         self.realtime = realtime
@@ -68,8 +63,7 @@ public final class ReplayMotionSource: MotionSource, @unchecked Sendable {
     }
 }
 
-/// CSV codec for pose traces. Columns are radians and radians per second:
-/// `timestamp,yaw,pitch,roll,pitchRate,yawRate,rollRate`.
+/// CSV codec for pose traces.
 public enum PoseCSV {
     public static let header = "timestamp,yaw,pitch,roll,pitchRate,yawRate,rollRate"
 

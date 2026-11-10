@@ -1,11 +1,9 @@
 import CoreGraphics
 import Foundation
 
-/// Display-rate rendering: spring/glide pointer motion, at most one move per frame,
-/// smooth pixel scrolling, and the pointer context.
+/// Display-rate rendering: spring/glide pointer motion, at most one move per frame, smooth pixel scrolling.
 extension AppCoordinator {
-    /// Called by the frame clock once per display refresh (`timestamp` on the
-    /// `CACurrentMediaTime` timebase).
+    /// Called by the frame clock once per display refresh (`timestamp` on the `CACurrentMediaTime` timebase).
     public func renderFrame(at timestamp: TimeInterval) {
         let interval = Self.signposter.beginInterval("frame")
         defer { Self.signposter.endInterval("frame", interval) }
@@ -18,7 +16,7 @@ extension AppCoordinator {
         if state.allowsPointerMotion, !pointerFrozen, let target = pointerTarget {
             if !animator.isGliding, let current = lastPostedPoint,
                hypot(target.x - current.x, target.y - current.y) < CGFloat(settings.pointerDeadZonePoints) {
-                animator.place(at: current)  // dead zone: hold still
+                animator.place(at: current)
             } else {
                 let step = animator.step(toward: target, now: timestamp, dt: dt)
                 let point = engine?.geometry.clamp(step.position) ?? step.position
@@ -34,7 +32,7 @@ extension AppCoordinator {
 
         if !scrollVelocity.isZero, state == .tracking || state == .scrollMode {
             let sign = settings.naturalScrolling ? 1.0 : -1.0
-            let anchor = scrollAnchor ?? lastPostedPoint ?? deps.cursor.currentPosition
+            let anchor = scrollLocation()
             let frameDt = min(max(dt, 0), 0.05)
             postAction {
                 deps.scroll.scroll(dx: scrollVelocity.horizontal * frameDt * sign,
@@ -46,16 +44,14 @@ extension AppCoordinator {
         updatePointerContext()
     }
 
-    /// If display frames stop arriving (no display link, display asleep), render from the
-    /// sensor loop instead so the pointer never stalls.
+    /// If display frames stop arriving (no display link, display asleep).
     func fallbackFrameIfStalled() {
         let now = deps.clock()
         if let last = lastFrameTime, now - last < 0.1 { return }
         renderFrame(at: now)
     }
 
-    /// Sample-to-cursor latency: time from the sensor sample that set the target to the
-    /// frame that posted the move. Visible in Instruments (Points of Interest).
+    /// Sample-to-cursor latency: time from the sensor sample that set the target to the frame that posted the move.
     private func reportLatency(at timestamp: TimeInterval) {
         guard let updated = targetUpdatedAt else { return }
         targetUpdatedAt = nil
@@ -72,5 +68,15 @@ extension AppCoordinator {
             holdFraction: holdProgress?.fraction)
         let context = PointerContextResolver.context(for: inputs)
         if context != pointerContext { pointerContext = context }
+    }
+
+    /// Scroll at the cursor, pulled just inside the edge margin: at the screen edge the point
+    /// would otherwise land on the Dock or menu bar instead of the content being read.
+    func scrollLocation() -> CGPoint {
+        let cursor = deps.cursor.currentPosition
+        let content = pointingRect.insetBy(dx: settings.scrollEdgeMargin, dy: settings.scrollEdgeMargin)
+        guard !content.isEmpty else { return cursor }
+        return CGPoint(x: min(max(cursor.x, content.minX), content.maxX),
+                       y: min(max(cursor.y, content.minY), content.maxY))
     }
 }

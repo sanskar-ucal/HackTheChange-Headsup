@@ -1,10 +1,6 @@
 import Foundation
 
 /// Smooths yaw, pitch and roll with one `OneEuroFilter` per axis.
-///
-/// Signals are filtered in degrees, so the default `beta` is in units of 1/(°/s). Yaw is
-/// unwrapped before filtering so crossing ±π doesn't produce a 360° jump. Rotation rates
-/// pass through untouched (gesture recognizers need the raw gyro response).
 public struct PoseFilter: Sendable {
     private var yawFilter: OneEuroFilter
     private var pitchFilter: OneEuroFilter

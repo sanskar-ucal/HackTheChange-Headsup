@@ -56,7 +56,7 @@ final class AppCoordinatorTests: XCTestCase {
         for (yaw, pitch) in [(0.0, 0.0), (-18, 13.5), (18, 13.5), (18, -13.5), (-18, -13.5), (0, 0)] {
             h.holdStill(3, yaw: yaw, pitch: pitch)
         }
-        h.holdStill(1.2, yaw: -18, pitch: -13.5)  // practice times out without reaching a target
+        h.holdStill(1.2, yaw: -18, pitch: -13.5)
         XCTAssertEqual(h.coordinator.practice?.phase, .suggesting(1.1))
         h.feed(2, yaw: [S.constant(-18)], pitch: [S.constant(-13.5), S.nod(at: 0.3)])
         XCTAssertEqual(h.coordinator.state, .tracking)
@@ -90,7 +90,6 @@ final class AppCoordinatorTests: XCTestCase {
         h.holdStill(1.6)
         XCTAssertEqual(h.coordinator.state, .tracking)
         XCTAssertTrue(h.feedback.cues.contains(.recentered))
-        // A glide, not a jump: several intermediate moves from (100,100) to the center.
         XCTAssertGreaterThan(h.cursor.moves.count, 2)
         XCTAssertLessThan(distance(h.cursor.moves.first ?? .zero, CGPoint(x: 100, y: 100)),
                           distance(CGPoint(x: 500, y: 400), CGPoint(x: 100, y: 100)))
@@ -128,8 +127,8 @@ final class AppCoordinatorTests: XCTestCase {
         h.cursor.clear()
 
         h.feed(3, yaw: [S.pan(10), S.shake(at: 2.0)], pitch: [S.nod(at: 0.5), S.nod(at: 1.4)])
-        h.feed(1, roll: [S.plateau(25, from: 0.1, to: 0.9)])  // tilt right is ignored while paused
-        h.holdStill(1, pitch: 25)  // would edge-scroll if tracking
+        h.feed(1, roll: [S.plateau(25, from: 0.1, to: 0.9)])
+        h.holdStill(1, pitch: 25)
         XCTAssertEqual(h.cursor.events, [])
         XCTAssertEqual(h.scroll.calls, 0)
         XCTAssertEqual(h.coordinator.state, .paused)
@@ -150,9 +149,8 @@ final class AppCoordinatorTests: XCTestCase {
 
     func testPointingFollowsHead() {
         let h = CoordinatorHarness.tracking()
-        h.holdStill(2, yaw: 10, pitch: 7.5)  // half-way right and half-way up
+        h.holdStill(2, yaw: 10, pitch: 7.5)
         guard let point = h.cursor.moves.last else { return XCTFail("no move") }
-        // Within the 0.6° dead-zone lag (≈ 15 px here) of the exact mapping.
         XCTAssertEqual(point.x, 750, accuracy: 18)
         XCTAssertEqual(point.y, 200, accuracy: 18)
     }
@@ -164,7 +162,6 @@ final class AppCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(h.cursor.clicks.count, 1)
         guard let click = h.cursor.clicks.first else { return }
-        // Rolled back to before the nod: vertically at the neutral line, not dragged down.
         XCTAssertEqual(click.y, 400, accuracy: 10)
         XCTAssertGreaterThan(click.x, 600, "the pan had moved the pointer right")
         XCTAssertTrue(h.feedback.cues.contains(.select))
@@ -197,7 +194,7 @@ final class AppCoordinatorTests: XCTestCase {
     func testMovesSkipSubPointChanges() {
         let h = CoordinatorHarness.tracking()
         let before = h.cursor.moves.count
-        h.holdStill(2)  // only sensor noise
+        h.holdStill(2)
         XCTAssertEqual(h.cursor.moves.count, before, "no posts for < 0.5 pt changes")
     }
 

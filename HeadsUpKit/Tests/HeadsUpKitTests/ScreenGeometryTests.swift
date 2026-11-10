@@ -3,7 +3,6 @@ import XCTest
 @testable import HeadsUpKit
 
 final class ScreenGeometryTests: XCTestCase {
-    /// Main 1440×900 at the origin; a 1920×1080 display to its right, top-aligned.
     private let geometry = ScreenGeometry(
         displays: [CGRect(x: 0, y: 0, width: 1440, height: 900), CGRect(x: 1440, y: 0, width: 1920, height: 1080)],
         mainDisplay: CGRect(x: 0, y: 0, width: 1440, height: 900))
@@ -26,13 +25,12 @@ final class ScreenGeometryTests: XCTestCase {
     func testClampKeepsPointsOnDisplays() {
         XCTAssertEqual(geometry.clamp(CGPoint(x: -50, y: -50)), .zero)
         XCTAssertEqual(geometry.clamp(CGPoint(x: 1440, y: 900)), CGPoint(x: 1440, y: 900), "on the second display")
-        // Below the main display but left of the second: the hole in the union.
         XCTAssertEqual(geometry.clamp(CGPoint(x: 1000, y: 1000)), CGPoint(x: 1000, y: 899))
         XCTAssertEqual(geometry.clamp(CGPoint(x: 9999, y: 9999)), CGPoint(x: 3359, y: 1079))
     }
 
     func testAppKitConversionFlipsAroundMainDisplay() {
-        let global = CGRect(x: 100, y: 0, width: 200, height: 100)  // touching the top edge
+        let global = CGRect(x: 100, y: 0, width: 200, height: 100)
         let appKit = geometry.appKitRect(fromGlobal: global)
         XCTAssertEqual(appKit, CGRect(x: 100, y: 800, width: 200, height: 100))
         XCTAssertEqual(geometry.globalRect(fromAppKit: appKit), global)
@@ -61,7 +59,6 @@ final class CursorHistoryTests: XCTestCase {
         var history = CursorHistory(duration: 0.6)
         for i in 0..<20 { history.append(CGPoint(x: Double(i), y: 0), at: Double(i) * 0.1) }
         XCTAssertLessThanOrEqual(history.entries.count, 7)
-        // Asking for a time before the buffer returns the oldest kept point.
         XCTAssertEqual(history.point(at: 0)?.x, history.entries.first?.point.x)
     }
 

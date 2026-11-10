@@ -3,13 +3,7 @@ import Combine
 import HeadsUpKit
 import SwiftUI
 
-/// A click-through window that follows the pointer and draws the chosen pointer style,
-/// the tilt-hold ring, mode badges and the live transcript bubble.
-///
-/// System cursor: `CGDisplayHideCursor` only reliably hides the arrow while HeadsUp is the
-/// frontmost app, and HeadsUp almost never is. So the arrow stays visible by default and
-/// the glyph is placed with its hotspot (fingertip) exactly on the arrow tip. The
-/// experimental "Hide system pointer" setting tries to hide it anyway.
+/// A click-through window that follows the pointer and draws the chosen pointer style, the tilt-hold ring.
 @MainActor
 final class PointerOverlayController {
     /// Where the click point sits inside the overlay window (top-left coordinates).
@@ -89,6 +83,7 @@ final class PointerOverlayController {
     }
 }
 
+/// The pointer glyph plus hold ring and transcript, drawn around the overlay anchor.
 struct PointerOverlayView: View {
     @ObservedObject var coordinator: AppCoordinator
     @ObservedObject var store: SettingsStore

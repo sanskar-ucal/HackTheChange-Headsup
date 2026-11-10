@@ -1,15 +1,7 @@
 import CoreGraphics
 import Foundation
 
-/// The pointing + gesture pipeline used while tracking. A pure value type: per sensor
-/// sample it computes where the pointer *should* be (the display-rate `PointerAnimator`
-/// gets it there) and which gestures fired.
-///
-/// Gestures are recognized from the **raw** pose, before anything else. The moment a nod
-/// or shake starts, the target freezes and edge scrolling stops; a confirmed gesture acts
-/// at the frozen spot. Fast pitch-dominant movement below the onset threshold (the first
-/// samples of a nod) already holds the target, so a nod's own up/down movement never moves
-/// the pointer.
+/// The pointing + gesture pipeline used while tracking.
 public struct TrackingEngine: Sendable {
     public enum Command: Sendable, Equatable {
         /// `point` is where the target was frozen when the gesture began.
@@ -90,9 +82,7 @@ public struct TrackingEngine: Sendable {
         heldPoint = nil
     }
 
-    /// - Parameters:
-    ///   - raw: unfiltered sensor pose: gesture recognition uses it.
-    ///   - filtered: One Euro filtered pose for pointing.
+    /// - Parameters: - raw: unfiltered sensor pose: gesture recognition uses it. - filtered.
     public mutating func process(raw: HeadPose, filtered: HeadPose) -> Output {
         let t = raw.timestamp
         let mapped = mapper.map(filtered)
@@ -140,7 +130,7 @@ public struct TrackingEngine: Sendable {
         let decision = recognizer.inner.decisionCount != decisionsBefore ? recognizer.inner.lastDecision : nil
         return Output(
             target: target, commands: commands,
-            overshoot: isFrozen || preHold ? .zero : mapped.overshoot,
+            overshoot: isFrozen || preHold ? .zero : mapper.map(raw).overshoot,
             isFrozen: isFrozen, didFreeze: didFreeze, decision: decision)
     }
 

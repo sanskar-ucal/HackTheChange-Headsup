@@ -104,6 +104,7 @@ struct MenuBarView: View {
     }
 }
 
+/// A checkmark or cross next to one requirement.
 struct StatusRow: View {
     let title: String
     let ok: Bool

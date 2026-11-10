@@ -1,6 +1,6 @@
 # HeadsUp
 
-HeadsUp is a macOS menu-bar app for people who can't use their hands. It lets them control the Mac with **head movement only**, using AirPods with dynamic head tracking as the sensor. Point by turning your head, nod to click, look past the top or bottom edge to scroll, and speak into search fields. Every action is confirmed with a short sound in the AirPods.
+HeadsUp is a hands-free Mac mouse for people with tetraplegia. It's a macOS menu-bar app that turns **head movement** into full pointer control, using AirPods with dynamic head tracking as the sensor. Point by turning your head, nod to click, look past the top or bottom edge to scroll, and speak into search fields. Every action is confirmed with a short sound in the AirPods. A caregiver can help with the one-time setup; after that, everyday use is hands-free.
 
 ## Installation
 
@@ -132,7 +132,6 @@ npm run build                           # static site in frontend/out
 Set the repository URL once, as `GITHUB_URL` in [`frontend/site.config.ts`](frontend/site.config.ts). Every download button and GitHub link uses it. To show the demo video, add `frontend/public/demo.mp4` (and optionally `frontend/public/demo-poster.jpg`).
 
 **Deploy to Vercel:** import the repo, set **Root Directory** to `frontend`, and keep the defaults (framework: Next.js). Nothing else needs configuring.
-
 ## Gesture cheat-sheet
 
 | Gesture | Action |
@@ -195,40 +194,7 @@ The setup window opens on first launch. You can reopen it from the menu-bar pane
 3. **AirPods**. Connect them and select them as the sound output.
 4. **Microphone + Speech Recognition** (optional). Only needed for voice input. Recognition runs on the Mac when supported.
 
-> **Rebuilding resets Accessibility.** The project is ad-hoc signed, so each rebuild can invalidate the grant. If clicks stop working, remove HeadsUp from the Accessibility list and add it again, or set `DEVELOPMENT_TEAM` in `project.yml`.
-
 The App Sandbox is **off**: posting input events and reading other apps' accessibility trees is impossible inside it.
-
-## Calibration & practice (hands-free)
-
-Calibration shows one large dot at a time (center, then the four corners 5% in from the edges, then the center again). Point your head at each dot and hold still for 1.5 s while the ring fills. Each capture is the median raw head pose over the last 0.75 s, and only counts if the head was still (under 5°/s); otherwise the ring restarts. Each side's range is fitted separately. If any side moved less than 5°, or the final center check is more than 3° from the first, calibration starts again. Calibration uses the raw sensor pose only, not smoothing, sensitivity or the pointer spring.
-
-If **Practice after calibration** is turned on (off by default), a **20-second practice** follows with three large circles: point at each one and nod. HeadsUp watches how you reach them and suggests a sensitivity:
-- If you overshoot a lot, it suggests calmer.
-- If you're slow to reach them, it suggests faster.
-
-**Nod** to accept the suggestion or **shake** to keep the current value.
-
-On later launches, hold still facing the screen for 2 s (or tilt right) to recenter.
-
-## Pointer styles
-
-**Settings → Pointer** offers five styles:
-- **Green circle** (default): the v1 halo
-- **Hand**: changes shape with what you're doing:
-  - open hand when idle
-  - pointing finger over buttons and links
-  - tap while clicking
-  - hand with arrows while scrolling
-  - mic badge while listening
-  - dimmed with a pause badge while paused
-- **Ring**
-- **Dot**
-- **Crosshair**
-
-You can also change the color, size (S–XL) and opacity, and turn the high-contrast outline on or off. The tilt-hold progress ring and the mode badges work with every style.
-
-**System arrow.** `CGDisplayHideCursor` only reliably hides the arrow while the calling app is frontmost, and HeadsUp almost never is. So by default the arrow stays visible, and the hand's fingertip (each shape's hotspot) is placed exactly on the arrow tip. *Hide system pointer (experimental)* tries to hide it anyway. Whether that works from the background must be checked on real hardware.
 
 ## Tuning
 

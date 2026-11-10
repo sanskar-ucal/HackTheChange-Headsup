@@ -1,6 +1,7 @@
 import HeadsUpKit
 import SwiftUI
 
+/// Pointer style, color, size, opacity and outline.
 struct PointerSettingsSection: View {
     @Binding var settings: HeadsUpSettings
 
@@ -63,9 +64,13 @@ struct PointerSettingsSection: View {
         BigToggle(title: "Hide system pointer (experimental)",
                   help: "macOS may only hide it while HeadsUp is frontmost. Off keeps the arrow under the fingertip.",
                   isOn: $settings.hideSystemCursor)
+        BigToggle(title: "Show scroll-to-top button",
+                  help: "A \u{201C}Top\u{201D} button near the top-right corner. Nod on it to jump to the top of the page.",
+                  isOn: $settings.showScrollToTopButton)
     }
 }
 
+/// When voice input starts, which microphone it uses, and its timeouts.
 struct VoiceSettingsSection: View {
     @Binding var settings: HeadsUpSettings
 
@@ -83,18 +88,28 @@ struct VoiceSettingsSection: View {
     }
 }
 
+/// Cue volume, mute and spoken prompts.
 struct SoundSettingsSection: View {
     @Binding var settings: HeadsUpSettings
+    let testSound: () -> Void
 
     var body: some View {
         SliderRow(title: "Cue volume", help: "Volume of the confirmation sounds in your AirPods.",
-                  value: $settings.feedbackVolume, range: 0...1, step: 0.05, format: "%.0f%%", scale: 100)
+                  value: $settings.feedbackVolume, range: 0.05...1, step: 0.05, format: "%.0f%%", scale: 100)
+        Button(action: testSound) {
+            Text("Test sound").frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(.bordered)
+        .disabled(settings.feedbackMuted)
+        HelpText(settings.feedbackMuted ? "Cues are muted. Turn off Mute cues to hear the test."
+                                        : "Plays the click sound through the current output.")
         BigToggle(title: "Mute cues", help: "Turn off all confirmation sounds.", isOn: $settings.feedbackMuted)
         BigToggle(title: "Spoken prompts", help: "Speak calibration steps and state changes.",
                   isOn: $settings.speechEnabled)
     }
 }
 
+/// Filter and spring tuning, axis inversion, live readout and motion recording.
 struct AdvancedSettingsSection: View {
     @Binding var settings: HeadsUpSettings
     let telemetry: LiveTelemetry
@@ -116,6 +131,7 @@ struct AdvancedSettingsSection: View {
     }
 }
 
+/// Start/stop motion recording and reveal the saved CSV.
 struct RecorderControls: View {
     @ObservedObject var recorder: MotionRecorder
 

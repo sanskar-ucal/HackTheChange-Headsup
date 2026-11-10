@@ -22,13 +22,10 @@ export function useMediaQuery(query: string): boolean {
 
 export const usePrefersReducedMotion = () => useMediaQuery("(prefers-reduced-motion: reduce)");
 
-/** True on touch-first devices, where hover animations should simply always play. */
+/** True on touch-first devices, where hover demos play continuously. */
 export const useNoHover = () => useMediaQuery("(hover: none)");
 
-/**
- * A looping clock in seconds that only advances while `running`.
- * When `resetOnStop` is set it snaps back to 0 so a resting pose is shown.
- */
+/** Looping clock in seconds that only advances while `running`; optionally snaps to 0 when stopped. */
 export function useLoopClock(running: boolean, period: number, resetOnStop = false): number {
   const [t, setT] = useState(0);
   const elapsed = useRef(0);

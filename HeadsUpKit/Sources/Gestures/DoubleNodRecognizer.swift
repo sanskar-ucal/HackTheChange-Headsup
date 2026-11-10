@@ -1,5 +1,6 @@
 import Foundation
 
+/// Double-nod timing, in seconds.
 public struct DoubleNodConfig: Sendable, Equatable {
     public var enabled: Bool
     /// Both nod onsets must fall within this window.
@@ -17,12 +18,6 @@ public struct DoubleNodConfig: Sendable, Equatable {
 }
 
 /// Wraps `NodShakeRecognizer` and tells single nods from double nods.
-///
-/// A single nod can't be known to be single until the chance of a second one has passed,
-/// so its confirmation is held back until the head has settled (rates below onset) and
-/// then `wait` (250 ms) more passes without a second onset. If a second nod starts, the
-/// decision waits for it: confirmed → `.doubleNod`, cancelled → the single `.nod`.
-/// With double nods disabled, events pass straight through and clicks are immediate.
 public struct DoubleNodRecognizer: GestureRecognizer {
     public var inner: NodShakeRecognizer
     public var config: DoubleNodConfig
@@ -75,7 +70,7 @@ public struct DoubleNodRecognizer: GestureRecognizer {
                     hold(onset: onset, at: t)
                 }
             case .candidateBegan(.nod, _) where pending != nil:
-                pending?.secondStarted = true  // already frozen by the first candidate
+                pending?.secondStarted = true
             case .candidateBegan(.shake, _) where pending != nil:
                 output += resolveSingle(at: t)
                 output.append(event)

@@ -1,9 +1,8 @@
 import AVFoundation
 import Foundation
+import OSLog
 
 /// Plays programmatically generated earcons through the current output (the AirPods).
-/// All buffers are synthesized up front and the engine and player stay running, so a cue
-/// starts within one render cycle of `play`.
 @MainActor
 public final class AudioFeedbackService: FeedbackService {
     private let engine = AVAudioEngine()
@@ -13,6 +12,8 @@ public final class AudioFeedbackService: FeedbackService {
     private var muted: Bool
     private var configObserver: NSObjectProtocol?
 
+    private static let log = Logger(subsystem: "com.hackthechange.HeadsUp", category: "audio")
+
     public init(volume: Double, muted: Bool) {
         self.muted = muted
         format = AVAudioFormat(standardFormatWithSampleRate: Earcon.sampleRate, channels: 1)!
@@ -20,31 +21,58 @@ public final class AudioFeedbackService: FeedbackService {
             buffers[cue] = Earcon.buffer(for: Earcon.tones(for: cue), format: format)
         }
         engine.attach(player)
-        engine.connect(player, to: engine.mainMixerNode, format: format)
-        player.volume = Float(volume)
+        player.volume = Self.sanitizedVolume(volume)
         configObserver = AudioEngineSupport.observeConfigurationChanges(of: engine) { [weak self] in
-            self?.restartAfterConfigurationChange()
+            self?.rebuildIfNeeded(reason: "audio configuration changed")
         }
-        AudioEngineSupport.startIfNeeded(engine)
-        if engine.isRunning { player.play() }
+        AudioEngineSupport.observeDefaultOutputChanges { [weak self] in
+            self?.rebuildIfNeeded(reason: "default output changed")
+        }
+        rebuild()
     }
 
-    private func restartAfterConfigurationChange() {
-        AudioEngineSupport.startIfNeeded(engine)
-        guard engine.isRunning else { return }
-        player.play()
+    /// Skips notifications the rebuild itself caused, so re-routing can't loop.
+    private func rebuildIfNeeded(reason: String) {
+        let target = AudioEngineSupport.defaultOutputDevice()
+        if engine.isRunning, target == nil || AudioEngineSupport.currentDevice(of: engine) == target { return }
+        Self.log.info("\(reason, privacy: .public); rebuilding cue engine")
+        rebuild()
+    }
+
+    /// Stops the engine, points it at the current default output (the AirPods when connected),
+    /// reconnects the graph and starts again. A configuration or route change stops the engine
+    /// and can leave stale connections, so a plain `start()` isn't enough.
+    private func rebuild() {
+        engine.stop()
+        if let device = AudioEngineSupport.defaultOutputDevice() {
+            AudioEngineSupport.route(engine, to: device)
+        }
+        engine.disconnectNodeOutput(player)
+        engine.connect(player, to: engine.mainMixerNode, format: format)
+        engine.connect(engine.mainMixerNode, to: engine.outputNode, format: nil)
+        engine.prepare()
+        do {
+            try engine.start()
+            player.play()
+        } catch {
+            Self.log.error("cue engine failed to start: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     public func configure(volume: Double, muted: Bool) {
-        player.volume = Float(min(max(volume, 0), 1))
+        player.volume = Self.sanitizedVolume(volume)
         self.muted = muted
+    }
+
+    /// Out-of-range or zero volumes fall back to the default; "Mute cues" is the way to silence them.
+    static func sanitizedVolume(_ volume: Double) -> Float {
+        guard volume.isFinite, volume > 0 else { return Float(HeadsUpSettings.defaults.feedbackVolume) }
+        return Float(min(volume, 1))
     }
 
     public func play(_ cue: FeedbackCue) {
         guard !muted, let buffer = buffers[cue] else { return }
-        if !engine.isRunning {
-            AudioEngineSupport.startIfNeeded(engine)
-        }
+        if !engine.isRunning { rebuild() }
         guard engine.isRunning else { return }
         player.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
         if !player.isPlaying { player.play() }
@@ -61,32 +89,31 @@ enum Earcon {
         var duration: Double
     }
 
-    /// Each cue is under 150 ms and has its own melodic contour.
     static func tones(for cue: FeedbackCue) -> [Tone] {
         switch cue {
-        case .select: return [Tone(frequency: 880, duration: 0.05), Tone(frequency: 1318.5, duration: 0.07)]   // rising
-        case .cancel: return [Tone(frequency: 659.3, duration: 0.05), Tone(frequency: 440, duration: 0.07)]    // falling
-        case .paused: return [Tone(frequency: 523.3, duration: 0.06), Tone(frequency: 392, duration: 0.08)]    // low falling
-        case .resumed: return [Tone(frequency: 392, duration: 0.06), Tone(frequency: 523.3, duration: 0.08)]   // low rising
+        case .select: return [Tone(frequency: 880, duration: 0.05), Tone(frequency: 1318.5, duration: 0.07)]
+        case .cancel: return [Tone(frequency: 659.3, duration: 0.05), Tone(frequency: 440, duration: 0.07)]
+        case .paused: return [Tone(frequency: 523.3, duration: 0.06), Tone(frequency: 392, duration: 0.08)]
+        case .resumed: return [Tone(frequency: 392, duration: 0.06), Tone(frequency: 523.3, duration: 0.08)]
         case .recentered:
             return [Tone(frequency: 1046.5, duration: 0.035), Tone(frequency: 0, duration: 0.02),
                     Tone(frequency: 1046.5, duration: 0.035), Tone(frequency: 0, duration: 0.02),
-                    Tone(frequency: 1046.5, duration: 0.035)]                                                     // triple tick
-        case .calibrationStep: return [Tone(frequency: 1568, duration: 0.05)]                                    // single tick
+                    Tone(frequency: 1046.5, duration: 0.035)]
+        case .calibrationStep: return [Tone(frequency: 1568, duration: 0.05)]
         case .calibrationDone:
             return [Tone(frequency: 784, duration: 0.045), Tone(frequency: 987.8, duration: 0.045),
-                    Tone(frequency: 1174.7, duration: 0.055)]                                                     // arpeggio
+                    Tone(frequency: 1174.7, duration: 0.055)]
         case .error:
             return [Tone(frequency: 220, duration: 0.05), Tone(frequency: 0, duration: 0.03),
-                    Tone(frequency: 220, duration: 0.05)]                                                         // low double
+                    Tone(frequency: 220, duration: 0.05)]
         case .scrollOn:
             return [Tone(frequency: 587.3, duration: 0.04), Tone(frequency: 784, duration: 0.04),
-                    Tone(frequency: 587.3, duration: 0.05)]                                                       // up-down wave
+                    Tone(frequency: 587.3, duration: 0.05)]
         case .scrollOff:
             return [Tone(frequency: 784, duration: 0.04), Tone(frequency: 587.3, duration: 0.04),
-                    Tone(frequency: 440, duration: 0.05)]                                                         // settling
-        case .listeningStart: return [Tone(frequency: 698.5, duration: 0.05), Tone(frequency: 1396.9, duration: 0.08)] // octave up
-        case .listeningStop: return [Tone(frequency: 1396.9, duration: 0.05), Tone(frequency: 698.5, duration: 0.08)]  // octave down
+                    Tone(frequency: 440, duration: 0.05)]
+        case .listeningStart: return [Tone(frequency: 698.5, duration: 0.05), Tone(frequency: 1396.9, duration: 0.08)]
+        case .listeningStop: return [Tone(frequency: 1396.9, duration: 0.05), Tone(frequency: 698.5, duration: 0.08)]
         }
     }
 
@@ -94,8 +121,6 @@ enum Earcon {
         tones.reduce(0) { $0 + $1.duration }
     }
 
-    /// Renders tones into a mono float buffer with 5 ms attack / 15 ms release envelopes
-    /// so cues don't click or startle.
     static func buffer(for tones: [Tone], format: AVAudioFormat, amplitude: Float = 0.35) -> AVAudioPCMBuffer? {
         let frameCount = AVAudioFrameCount((totalDuration(of: tones) * sampleRate).rounded(.up))
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount),

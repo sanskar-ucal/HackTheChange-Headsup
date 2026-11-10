@@ -8,15 +8,35 @@ final class ScrollingCoordinatorTests: XCTestCase {
 
     func testEdgePushScrollsUpWhenLookingPastTheTop() {
         let h = CoordinatorHarness.tracking()
-        h.holdStill(1.5, pitch: 25)  // top edge at 15°; 10° overshoot
+        h.holdStill(1.5, pitch: 25)
         XCTAssertGreaterThan(h.scroll.totalDy, 100, "scrolls up (reveals content above)")
         XCTAssertEqual(h.cursor.moves.last?.y ?? -1, 0, accuracy: 1, "pointer pinned at the top")
         XCTAssertEqual(h.coordinator.pointerContext, .scrolling(.up))
     }
 
+    func testEdgePushScrollsDownWhenLookingPastTheBottom() {
+        let h = CoordinatorHarness.tracking()
+        h.holdStill(1.5, pitch: -25)  // bottom edge at 15°; 10° overshoot
+        XCTAssertLessThan(h.scroll.totalDy, -100, "head down scrolls down")
+        XCTAssertEqual(h.cursor.moves.last?.y ?? -1, 800, accuracy: 1, "pointer pinned at the bottom")
+        XCTAssertEqual(h.coordinator.pointerContext, .scrolling(.down))
+    }
+
+    func testEdgePushEngagesAtDefaultSensitivityJustPastTheEngageZone() {
+        var settings = CoordinatorHarness.testSettings
+        settings.sensitivity = HeadsUpSettings.defaults.sensitivity
+        let h = CoordinatorHarness.tracking(settings: settings)
+        h.holdStill(1.5, pitch: -29)  // bottom edge at 25° (15° / 0.6); 4° overshoot
+        XCTAssertLessThan(h.scroll.totalDy, -50, "a small tilt past the edge already scrolls noticeably")
+    }
+
+    func testEdgeScrollIsOnByDefault() {
+        XCTAssertTrue(HeadsUpSettings.defaults.edgeScrollEnabled)
+    }
+
     func testNoEdgeScrollJustInsideTheEngageZone() {
         let h = CoordinatorHarness.tracking()
-        h.holdStill(1.5, pitch: 17)  // 2° past the edge: below the 3° engage overshoot
+        h.holdStill(1.5, pitch: 17)
         XCTAssertEqual(h.scroll.calls, 0)
     }
 
@@ -38,7 +58,7 @@ final class ScrollingCoordinatorTests: XCTestCase {
         XCTAssertEqual(h.cursor.clicks, [], "a double nod does not click")
 
         let movesBefore = h.cursor.moves.count
-        h.holdStill(1.5, pitch: 12)  // look up relative to the settled pose
+        h.holdStill(1.5, pitch: 12)
         XCTAssertGreaterThan(h.scroll.totalDy, 100)
         XCTAssertEqual(h.cursor.moves.count, movesBefore, "pointer is frozen in scroll mode")
 
@@ -66,7 +86,7 @@ final class VoiceInputCoordinatorTests: XCTestCase {
                                                                                   subrole: "AXSearchField")) -> CoordinatorHarness {
         let h = CoordinatorHarness.tracking()
         h.focus.focused = info
-        h.feed(2, pitch: [S.nod(at: 0.3)])  // nod-click into the field
+        h.feed(2, pitch: [S.nod(at: 0.3)])
         return h
     }
 

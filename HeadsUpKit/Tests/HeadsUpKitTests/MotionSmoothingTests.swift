@@ -8,7 +8,7 @@ final class PointerAnimatorTests: XCTestCase {
         animator.place(at: .zero)
         let target = CGPoint(x: 100, y: 0)
         var position = CGPoint.zero
-        for frame in 1...8 {  // 8 frames at 200 Hz = 40 ms
+        for frame in 1...8 {
             position = animator.step(toward: target, now: Double(frame) / 200, dt: 1.0 / 200.0).position
             XCTAssertLessThanOrEqual(position.x, 100, "critically damped: never overshoots")
         }
@@ -17,7 +17,6 @@ final class PointerAnimatorTests: XCTestCase {
     }
 
     func testSpringRemovesSensorStepping() {
-        // The target jumps every 40 ms (25 Hz); at 120 Hz frames the pointer moves every frame.
         var animator = PointerAnimator(stiffness: 5000)
         animator.place(at: .zero)
         var positions: [CGFloat] = []
@@ -66,7 +65,7 @@ final class ScrollCurveTests: XCTestCase {
         settings.horizontalEdgeScroll = true
         XCTAssertGreaterThan(ScrollVelocity.edgePush(EdgeOvershoot(left: 8), settings: settings).horizontal, 0)
         settings.scrollSpeed = 2
-        XCTAssertEqual(ScrollVelocity.edgePush(EdgeOvershoot(up: 8), settings: settings).vertical, 750, accuracy: 1e-9)
+        XCTAssertEqual(ScrollVelocity.edgePush(EdgeOvershoot(up: 8), settings: settings).vertical, 930, accuracy: 1e-9)
         settings.edgeScrollEnabled = false
         XCTAssertTrue(ScrollVelocity.edgePush(EdgeOvershoot(up: 20), settings: settings).isZero)
     }

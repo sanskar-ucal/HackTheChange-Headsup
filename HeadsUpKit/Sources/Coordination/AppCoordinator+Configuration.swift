@@ -18,11 +18,8 @@ extension AppCoordinator {
         public var textInserter: TextInserter
         public var screenGeometry: @MainActor () -> ScreenGeometry
         public var isAppActive: @MainActor () -> Bool
-        /// Seconds on the frame clock's timebase (`CACurrentMediaTime`).
         public var clock: @MainActor () -> TimeInterval
-        /// Runs `work` after a delay on the main actor.
         public var schedule: @MainActor (TimeInterval, @escaping @MainActor @Sendable () -> Void) -> Void
-        /// Persists a settings change made by the coordinator (accepted practice suggestion).
         public var updateSettings: @MainActor (HeadsUpSettings) -> Void
         /// Camera eye tracking for blink gestures; nil on Macs/builds without it.
         public var blinkSource: BlinkSource?
@@ -63,7 +60,6 @@ extension AppCoordinator {
 
     // MARK: Settings & screens
 
-    /// Applies new settings live (sensitivity, smoothing… no recalibration).
     public func apply(settings newSettings: HeadsUpSettings) {
         let wasBlinkEnabled = settings.blinkGesturesEnabled
         settings = newSettings
@@ -88,6 +84,5 @@ extension AppCoordinator {
 
     public var screenGeometry: ScreenGeometry { deps.screenGeometry() }
 
-    /// The global (top-left) rectangle head pointing maps onto.
     public var pointingRect: CGRect { screenGeometry.pointingRect(spanAllDisplays: settings.spanAllDisplays) }
 }

@@ -1,7 +1,6 @@
 import Foundation
 
-/// Debug helper: records live poses to CSV so gestures and thresholds can be tuned offline
-/// and recordings can be replayed with `ReplayMotionSource`.
+/// Records head poses to a CSV that `ReplayMotionSource` can play back.
 @MainActor
 public final class MotionRecorder: ObservableObject {
     @Published public private(set) var isRecording = false
@@ -33,7 +32,6 @@ public final class MotionRecorder: ObservableObject {
         sampleCount = samples.count
     }
 
-    /// Stops recording and writes the CSV. Returns the file URL, or nil if nothing was saved.
     @discardableResult
     public func stop() -> URL? {
         isRecording = false

@@ -17,10 +17,12 @@ public struct CapturedPose: Sendable, Equatable, Codable {
     }
 }
 
+/// A calibrated direction of head travel.
 public enum CalibrationAxis: String, Sendable, Equatable {
     case left, right, up, down
 }
 
+/// Why a calibration attempt was rejected.
 public enum CalibrationError: Error, Sendable, Equatable {
     case missingCapture(CalibrationStep)
     case rangeTooSmall(CalibrationAxis, degrees: Double)
@@ -43,9 +45,7 @@ public enum CalibrationError: Error, Sendable, Equatable {
     }
 }
 
-/// Per-user mapping model: the neutral pose plus how far the head turns to reach each
-/// screen edge. Each side is fitted independently because range of motion is often
-/// asymmetric. All values are radians; ranges are positive.
+/// Per-user mapping model: the neutral pose plus how far the head turns to reach each screen edge.
 public struct Calibration: Sendable, Equatable, Codable {
     public var neutralYaw: Double
     public var neutralPitch: Double
@@ -67,10 +67,6 @@ public struct Calibration: Sendable, Equatable, Codable {
     }
 
     /// Fits a calibration from the five captured poses.
-    ///
-    /// Corner targets sit `targetInset` (normalized) in from the screen edges, so the
-    /// measured angle is extrapolated to the full half-width:
-    /// `range = |angle| × 0.5 / (0.5 − inset)`.
     public static func fit(
         captures: [CalibrationStep: CapturedPose],
         targetInset: Double,

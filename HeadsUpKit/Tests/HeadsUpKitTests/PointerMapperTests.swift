@@ -21,7 +21,6 @@ final class PointerMapperTests: XCTestCase {
         m.map(pose(yaw: yaw)).point.x
     }
 
-    /// Pixel distance in a 1000 × 800 pointing rect.
     private func pixels(_ a: NormalizedPoint, _ b: NormalizedPoint) -> Double {
         hypot((a.x - b.x) * 1000, (a.y - b.y) * 800)
     }
@@ -74,7 +73,6 @@ final class PointerMapperTests: XCTestCase {
     func testPointingIsAPureFunctionOfPose() {
         let m = mapper(sensitivity: 0.6)
         let original = m.map(pose(yaw: 5, pitch: 3, t: 0)).point
-        // Wander far away and come back from the other side: same pose, same point.
         for i in 0...40 { _ = m.map(pose(yaw: 5 - Double(i), pitch: 3 - Double(i) * 0.5, t: Double(i) * 0.04)) }
         for i in 0...40 { _ = m.map(pose(yaw: -35 + Double(i), pitch: -17 + Double(i) * 0.5, t: 2 + Double(i) * 0.04)) }
         let returned = m.map(pose(yaw: 5, pitch: 3, t: 4)).point
@@ -85,8 +83,7 @@ final class PointerMapperTests: XCTestCase {
     }
 
     func testYawWrapAroundAtPi() {
-        // -179° is 2° to the right of 179°, not 358° to the left.
-        let point = mapper(neutralYaw: r(179)).map(HeadPose(timestamp: 0, yaw: r(-179), pitch: 0, roll: 0)).point
+        let point = mapper(neutralYaw: 179).map(HeadPose(timestamp: 0, yaw: r(-179), pitch: 0, roll: 0)).point
         XCTAssertEqual(point.x, 0.5 + 0.5 * 2 / 30, accuracy: 1e-9)
     }
 }

@@ -3,7 +3,6 @@ import Foundation
 @testable import HeadsUpKit
 
 /// Wires an `AppCoordinator` to mocks and feeds it synthetic poses on a virtual clock.
-/// After every pose it renders one frame at the pose's timestamp (25 Hz frames).
 @MainActor
 final class CoordinatorHarness {
     typealias S = TraceSynth
@@ -25,14 +24,12 @@ final class CoordinatorHarness {
     private let now: Box<Double>
     private let saved: Box<[HeadsUpSettings]>
 
-    /// 1000×800 display; ±20° yaw and ±15° pitch reach the edges at sensitivity 1.
     nonisolated static let geometry = ScreenGeometry(displays: [CGRect(x: 0, y: 0, width: 1000, height: 800)])
     nonisolated static let calibration = Calibration(
         neutralYaw: 0, neutralPitch: 0, neutralRoll: 0,
         rangeLeft: AngleMath.radians(20), rangeRight: AngleMath.radians(20),
         rangeUp: AngleMath.radians(15), rangeDown: AngleMath.radians(15))
 
-    /// Settings for coordinator tests: sensitivity 1 so pointer positions are easy to predict.
     nonisolated static var testSettings: HeadsUpSettings {
         var settings = HeadsUpSettings.defaults
         settings.permissionPollInterval = 0
@@ -71,7 +68,6 @@ final class CoordinatorHarness {
             settings: settings)
     }
 
-    /// Settings the coordinator asked to persist.
     var settingsUpdates: [HeadsUpSettings] { saved.value }
 
     func feed(_ duration: Double, yaw: [S.Component] = [], pitch: [S.Component] = [], roll: [S.Component] = []) {
@@ -84,7 +80,6 @@ final class CoordinatorHarness {
         clock += duration
     }
 
-    /// Feeds explicit poses (timestamps relative to 0), calling `each` after every pose and frame.
     func feed(poses: [HeadPose], each: (HeadPose) -> Void = { _ in }) {
         guard let last = poses.last else { return }
         for var pose in poses {

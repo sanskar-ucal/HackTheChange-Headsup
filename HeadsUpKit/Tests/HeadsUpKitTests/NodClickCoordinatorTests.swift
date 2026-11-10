@@ -8,7 +8,7 @@ final class NodClickCoordinatorTests: XCTestCase {
 
     func testNodClicksAtOnsetPointAndHoldsStill() throws {
         let h = CoordinatorHarness.tracking()
-        let nod = try S.fixture("nod")  // nod from 0.6 s to 1.2 s
+        let nod = try S.fixture("nod")
         let start = h.clock
         var onsetPoint: CGPoint?
         var movesAtOnset: Int?
@@ -36,7 +36,7 @@ final class NodClickCoordinatorTests: XCTestCase {
     func testNodMovementNeverMovesTheCursor() {
         let h = CoordinatorHarness.tracking()
         h.cursor.clear()
-        h.feed(1.5, pitch: [S.nod(at: 0.3)])  // nod done by 0.9 s, hold ends ~1.1 s
+        h.feed(1.5, pitch: [S.nod(at: 0.3)])
         XCTAssertEqual(h.cursor.clicks.count, 1)
         XCTAssertEqual(h.cursor.moves, [], "the nod's own up/down movement is never followed")
     }
@@ -46,7 +46,6 @@ final class NodClickCoordinatorTests: XCTestCase {
         h.cursor.clear()
         var clickTime: Double?
         var movesBeforeRelease = 0
-        // Nod, then turn the head right during the hold after the click.
         h.feed(poses: S.trace(duration: 2.5, yaw: [S.plateau(10, from: 0.8, to: 2.5)], pitch: [S.nod(at: 0.3)])) { pose in
             if clickTime == nil, !h.cursor.clicks.isEmpty { clickTime = pose.timestamp }
             if let clickTime, pose.timestamp < clickTime + 0.4 - 1e-9 { movesBeforeRelease = h.cursor.moves.count }
@@ -60,7 +59,7 @@ final class NodClickCoordinatorTests: XCTestCase {
     func testRejectedNodUnfreezesWithoutAJump() {
         let h = CoordinatorHarness.tracking()
         h.cursor.clear()
-        h.feed(2, pitch: [S.nod(at: 0.5, amplitude: 5, period: 0.2)])  // fast but tiny: rejected
+        h.feed(2, pitch: [S.nod(at: 0.5, amplitude: 5, period: 0.2)])
         XCTAssertEqual(h.cursor.clicks, [])
         let line = h.coordinator.telemetry.gestureLog.last ?? ""
         XCTAssertTrue(line.contains("nod rejected") && line.contains("excursion"), line)
@@ -73,9 +72,9 @@ final class NodClickCoordinatorTests: XCTestCase {
     func testSmallTargetChangesDontMoveTheCursor() {
         let h = CoordinatorHarness.tracking()
         h.cursor.clear()
-        h.holdStill(1, yaw: 0.1)  // 2.5 pt: inside the 3 pt dead zone
+        h.holdStill(1, yaw: 0.1)
         XCTAssertEqual(h.cursor.moves, [])
-        h.holdStill(1, yaw: 0.4)  // 10 pt: moves
+        h.holdStill(1, yaw: 0.4)
         XCTAssertFalse(h.cursor.moves.isEmpty)
     }
 }

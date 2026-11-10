@@ -1,17 +1,14 @@
 import AppKit
 import QuartzCore
 
-/// Calls back once per display refresh so pointer motion is rendered at display rate,
-/// independent of the 25–50 Hz sensor rate.
+/// Calls back once per display refresh so pointer motion is rendered at display rate.
 @MainActor
 public protocol FrameClock: AnyObject {
-    /// `timestamp` is on the `CACurrentMediaTime()` clock.
     func start(_ onFrame: @escaping @MainActor (_ timestamp: TimeInterval) -> Void)
     func stop()
 }
 
-/// `NSScreen.displayLink` (macOS 14 `CADisplayLink`). Falls back to a 60 Hz timer when no
-/// screen is available. `CVDisplayLink` is deprecated on macOS 14 and not used.
+/// `NSScreen.displayLink` (macOS 14 `CADisplayLink`).
 @MainActor
 public final class DisplayLinkFrameClock: NSObject, FrameClock {
     private var link: CADisplayLink?

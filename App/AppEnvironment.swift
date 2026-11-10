@@ -49,8 +49,6 @@ final class AppEnvironment {
             .store(in: &cancellables)
     }
 
-    /// Live AirPods by default. For demos and debugging without hardware, launch with
-    /// `HEADSUP_REPLAY=/path/to/trace.csv` to loop a recorded trace instead.
     private static func makeMotionSource() -> MotionSource {
         if let path = ProcessInfo.processInfo.environment["HEADSUP_REPLAY"],
            let replay = try? ReplayMotionSource(csvURL: URL(fileURLWithPath: path), realtime: true, loops: true) {

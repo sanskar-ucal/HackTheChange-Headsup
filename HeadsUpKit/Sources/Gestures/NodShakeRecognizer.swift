@@ -37,16 +37,7 @@ public struct GestureDecision: Sendable, Equatable {
     }
 }
 
-/// Rotation-rate state machine for nods (pitch) and shakes (yaw). Feed it **raw** sensor
-/// poses (gyro rates and attitude); filtered or mapped values would hide fast motion.
-///
-/// - Onset: the dominant axis rate exceeds `onsetRate` → `candidateBegan`.
-/// - Nod: within `nodWindow` the pitch rate reverses past `onsetRate`, the pitch excursion
-///   reaches `nodMinAmplitude`, and the yaw rate stays below `crossAxisMax`.
-/// - Shake: the yaw rate reverses `shakeMinDirectionChanges` times within `shakeWindow`,
-///   each half-swing spans `shakeMinAmplitude`, and the pitch rate stays low.
-/// After a confirm or cancel, both rates must drop below `onsetRate` before a new candidate
-/// can start (so a fast pan doesn't re-trigger continuously), and confirms add a cooldown.
+/// Rotation-rate state machine for nods (pitch) and shakes (yaw).
 public struct NodShakeRecognizer: GestureRecognizer {
     public var config: NodShakeConfig
 

@@ -2,13 +2,11 @@ import CoreGraphics
 import Foundation
 
 /// In-place scroll mode: a double nod freezes the pointer and head pitch scrolls.
-/// A shake or another double nod exits.
 extension AppCoordinator {
     func enterScrollMode() {
         guard state == .tracking else { return }
         scrollMode = ScrollModeRecognizer(settings: settings)
         modeRecognizer.reset()
-        scrollAnchor = lastPostedPoint ?? deps.cursor.currentPosition
         enter(.scrollMode)
         deps.feedback.play(.scrollOn)
         announce("Scroll mode. Look up or down to scroll. Shake to stop.")
