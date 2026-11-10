@@ -25,7 +25,7 @@ export const hero = {
 /** Honest facts only: no stats, reviews or download counts. */
 export const quickFacts = [
   { strong: "3", rest: " head gestures" },
-  { strong: "No camera", rest: " needed" },
+  { strong: "Camera", rest: " optional" },
   { strong: "Runs", rest: " on-device" },
   { strong: "Free", rest: " & open source" },
 ];
@@ -45,7 +45,7 @@ export const howItWorks = {
   steps: [
     {
       title: "Put in your AirPods",
-      body: "Any AirPods with head tracking work. HeadsUp reads their motion sensors. No camera, no extra hardware.",
+      body: "Any AirPods with head tracking work. HeadsUp reads their motion sensors. No extra hardware, and no camera unless you turn on blink gestures.",
     },
     {
       title: "Calibrate by looking at 5 dots",
@@ -196,11 +196,14 @@ export const privacy = {
   eyebrow: "Privacy",
   titleStart: "Stays on",
   titleEmphasis: "your Mac.",
-  body: "Head motion and voice are processed on your Mac. Nothing about how you move or what you say is sent to us.",
+  body: "Head motion, voice and, if you turn on blink gestures, camera frames are processed on your Mac. Nothing about how you move, what you say or what the camera sees is sent to us.",
   points: [
     { title: "No account", body: "Download it and use it. There's nothing to sign up for." },
     { title: "No tracking", body: "No analytics, no ads, no telemetry." },
-    { title: "No camera", body: "HeadsUp only uses the motion sensors in your AirPods." },
+    {
+      title: "Camera only if you ask",
+      body: "Blink gestures are off by default. When on, the camera only measures how open your eyes are: no video is saved and no face is identified.",
+    },
   ],
 };
 
@@ -243,7 +246,7 @@ export const faq = {
     },
     {
       q: "Does it need a camera?",
-      a: "No. HeadsUp uses the motion sensors inside your AirPods, so it works in the dark, in bed, and without anything pointed at your face.",
+      a: "No. HeadsUp uses the motion sensors inside your AirPods, so it works in the dark, in bed, and without anything pointed at your face. If you like, you can turn on blink gestures (double blink to click, triple blink to cancel), which use the Mac's camera. They're off by default and everything stays on your Mac.",
     },
     {
       q: "Is my data private?",

@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { BlinkGestures } from "@/components/BlinkGestures";
 import { FAQ } from "@/components/FAQ";
 import { Features } from "@/components/Features";
 import { FinalCTA } from "@/components/FinalCTA";
@@ -29,6 +30,7 @@ export default function Home() {
         <SeeItInAction hasVideo={hasVideo} poster={poster} />
         <HowItWorks />
         <Gestures />
+        <BlinkGestures />
         <Features />
         <RealLife />
         <Privacy />
